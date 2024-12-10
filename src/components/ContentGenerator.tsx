@@ -37,13 +37,19 @@ const ContentGenerator = () => {
   };
 
   const generatePrompt = (title: string) => {
-    return `Generate SEO content for an article titled "${title}". Return a JSON object with these exact keys:
+    return `You are an SEO expert specializing in writing compelling meta descriptions. For the article titled "${title}", create a JSON response with these exact keys:
 {
   "title": "An SEO-optimized title (max 55 chars)",
   "permalink": "url-friendly-permalink",
-  "metaDescription": "A compelling meta description (max 155 chars)"
+  "metaDescription": "Create a compelling meta description that:
+    - Is under 155 characters
+    - Captures the essence of the content
+    - Includes relevant keywords naturally
+    - Creates urgency and interest
+    - Clearly communicates value to the reader
+    - Maintains proper grammar and readability"
 }
-Do not include any markdown formatting or additional text. Return only valid JSON.`;
+Return only valid JSON without any markdown formatting or additional text.`;
   };
 
   const parseAIResponse = (responseText: string): GeneratedContent => {
