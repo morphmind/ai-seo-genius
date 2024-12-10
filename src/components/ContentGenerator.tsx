@@ -37,14 +37,25 @@ const ContentGenerator = () => {
   };
 
   const generatePrompt = (title: string) => {
-    return `As an SEO expert, generate optimized content for an article titled "${title}". Please provide:
+    return `Generate SEO content for an article titled "${title}". Return a JSON object with these exact keys:
+{
+  "title": "An SEO-optimized title (max 55 chars)",
+  "permalink": "url-friendly-permalink",
+  "metaDescription": "A compelling meta description (max 155 chars)"
+}
+Do not include any markdown formatting or additional text. Return only valid JSON.`;
+  };
 
-1. An SEO-optimized title (max 55 characters)
-2. A URL-friendly permalink
-3. A compelling meta description (max 155 characters)
-
-Format the response as JSON with these exact keys: title, permalink, metaDescription.
-Make sure the content is engaging, relevant to the topic, and optimized for search engines.`;
+  const parseAIResponse = (responseText: string): GeneratedContent => {
+    try {
+      // Remove any markdown formatting if present
+      const jsonString = responseText.replace(/```json\n?|\n?```/g, '').trim();
+      return JSON.parse(jsonString);
+    } catch (error) {
+      console.error("JSON parsing error:", error);
+      console.log("Raw response:", responseText);
+      throw new Error("Invalid response format from AI");
+    }
   };
 
   const handleGenerate = async () => {
@@ -86,7 +97,7 @@ Make sure the content is engaging, relevant to the topic, and optimized for sear
             messages: [
               {
                 role: "system",
-                content: "You are an SEO expert who generates optimized content."
+                content: "You are an SEO expert. Always respond with valid JSON only."
               },
               {
                 role: "user",
@@ -98,11 +109,12 @@ Make sure the content is engaging, relevant to the topic, and optimized for sear
         });
 
         if (!response.ok) {
-          throw new Error("Failed to generate content");
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || "Failed to generate content");
         }
 
         const data = await response.json();
-        const generatedContent = JSON.parse(data.choices[0].message.content);
+        const generatedContent = parseAIResponse(data.choices[0].message.content);
         setContent(generatedContent);
       } else {
         // Anthropic API implementation would go here
@@ -112,12 +124,12 @@ Make sure the content is engaging, relevant to the topic, and optimized for sear
         });
       }
     } catch (error) {
+      console.error("Generation error:", error);
       toast({
         title: "Error",
-        description: "Failed to generate content. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate content. Please try again.",
         variant: "destructive",
       });
-      console.error("Generation error:", error);
     } finally {
       setLoading(false);
     }
