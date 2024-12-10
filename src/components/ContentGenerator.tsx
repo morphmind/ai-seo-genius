@@ -14,7 +14,7 @@ interface GeneratedContent {
 }
 
 type Provider = "openai" | "anthropic";
-type Model = "gpt-4o" | "gpt-4o-mini" | "claude-3-opus" | "claude-3-sonnet" | "claude-3-haiku";
+type Model = "gpt-4" | "gpt-4-turbo" | "gpt-3.5-turbo" | "gpt-4o" | "gpt-4o-mini" | "claude-3-opus" | "claude-3-sonnet" | "claude-3-haiku";
 
 const ContentGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
@@ -26,7 +26,7 @@ const ContentGenerator = () => {
 
   const getAvailableModels = (provider: Provider): Model[] => {
     if (provider === "openai") {
-      return ["gpt-4o", "gpt-4o-mini"];
+      return ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"];
     }
     return ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"];
   };
@@ -34,6 +34,17 @@ const ContentGenerator = () => {
   const handleProviderChange = (value: Provider) => {
     setProvider(value);
     setModel(getAvailableModels(value)[0]);
+  };
+
+  const generatePrompt = (title: string) => {
+    return `As an SEO expert, generate optimized content for an article titled "${title}". Please provide:
+
+1. An SEO-optimized title (max 55 characters)
+2. A URL-friendly permalink
+3. A compelling meta description (max 155 characters)
+
+Format the response as JSON with these exact keys: title, permalink, metaDescription.
+Make sure the content is engaging, relevant to the topic, and optimized for search engines.`;
   };
 
   const handleGenerate = async () => {
@@ -61,19 +72,52 @@ const ContentGenerator = () => {
 
     setLoading(true);
     try {
-      // Mock API call for now
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setContent({
-        title: "How to Optimize Your Website for Search Engines",
-        permalink: "optimize-website-search-engines",
-        metaDescription: "Learn proven strategies to improve your website's search engine rankings with our comprehensive guide to SEO optimization techniques.",
-      });
+      const prompt = generatePrompt(inputTitle);
+      
+      if (provider === "openai") {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: "system",
+                content: "You are an SEO expert who generates optimized content."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to generate content");
+        }
+
+        const data = await response.json();
+        const generatedContent = JSON.parse(data.choices[0].message.content);
+        setContent(generatedContent);
+      } else {
+        // Anthropic API implementation would go here
+        toast({
+          title: "Info",
+          description: "Anthropic API integration coming soon",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to generate content. Please try again.",
         variant: "destructive",
       });
+      console.error("Generation error:", error);
     } finally {
       setLoading(false);
     }
