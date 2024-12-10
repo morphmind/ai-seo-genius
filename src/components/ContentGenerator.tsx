@@ -1,20 +1,13 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-
-interface GeneratedContent {
-  title: string;
-  permalink: string;
-  metaDescription: string;
-}
-
-type Provider = "openai" | "anthropic";
-type Model = "gpt-4" | "gpt-4-turbo" | "gpt-3.5-turbo" | "gpt-4o" | "gpt-4o-mini" | "claude-3-opus" | "claude-3-sonnet" | "claude-3-haiku";
+import { GeneratedContent, Provider, Model } from "@/types/content";
+import { generateSEOPrompt, parseAIResponse } from "@/utils/prompts";
+import ModelSelector from "./ModelSelector";
+import ContentDisplay from "./ContentDisplay";
 
 const ContentGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
@@ -23,46 +16,6 @@ const ContentGenerator = () => {
   const [provider, setProvider] = useState<Provider>("openai");
   const [model, setModel] = useState<Model>("gpt-4o");
   const { toast } = useToast();
-
-  const getAvailableModels = (provider: Provider): Model[] => {
-    if (provider === "openai") {
-      return ["gpt-4o", "gpt-4o-mini", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"];
-    }
-    return ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"];
-  };
-
-  const handleProviderChange = (value: Provider) => {
-    setProvider(value);
-    setModel(getAvailableModels(value)[0]);
-  };
-
-  const generatePrompt = (title: string) => {
-    return `You are an SEO expert specializing in writing compelling meta descriptions. For the article titled "${title}", create a JSON response with these exact keys:
-{
-  "title": "An SEO-optimized title (max 55 chars)",
-  "permalink": "url-friendly-permalink",
-  "metaDescription": "Create a compelling meta description that:
-    - Is under 155 characters
-    - Captures the essence of the content
-    - Includes relevant keywords naturally
-    - Creates urgency and interest
-    - Clearly communicates value to the reader
-    - Maintains proper grammar and readability"
-}
-Return only valid JSON without any markdown formatting or additional text.`;
-  };
-
-  const parseAIResponse = (responseText: string): GeneratedContent => {
-    try {
-      // Remove any markdown formatting if present
-      const jsonString = responseText.replace(/```json\n?|\n?```/g, '').trim();
-      return JSON.parse(jsonString);
-    } catch (error) {
-      console.error("JSON parsing error:", error);
-      console.log("Raw response:", responseText);
-      throw new Error("Invalid response format from AI");
-    }
-  };
 
   const handleGenerate = async () => {
     if (!inputTitle.trim()) {
@@ -89,7 +42,7 @@ Return only valid JSON without any markdown formatting or additional text.`;
 
     setLoading(true);
     try {
-      const prompt = generatePrompt(inputTitle);
+      const prompt = generateSEOPrompt(inputTitle);
       
       if (provider === "openai") {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -123,7 +76,6 @@ Return only valid JSON without any markdown formatting or additional text.`;
         const generatedContent = parseAIResponse(data.choices[0].message.content);
         setContent(generatedContent);
       } else {
-        // Anthropic API implementation would go here
         toast({
           title: "Info",
           description: "Anthropic API integration coming soon",
@@ -144,35 +96,13 @@ Return only valid JSON without any markdown formatting or additional text.`;
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>AI Provider</Label>
-            <Select value={provider} onValueChange={(value: Provider) => handleProviderChange(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select provider" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="openai">OpenAI</SelectItem>
-                <SelectItem value="anthropic">Anthropic</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Model</Label>
-            <Select value={model} onValueChange={(value: Model) => setModel(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select model" />
-              </SelectTrigger>
-              <SelectContent>
-                {getAvailableModels(provider).map((modelOption) => (
-                  <SelectItem key={modelOption} value={modelOption}>
-                    {modelOption}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <ModelSelector 
+          provider={provider}
+          model={model}
+          onProviderChange={setProvider}
+          onModelChange={setModel}
+        />
+        
         <div className="space-y-2">
           <Label>Article Title</Label>
           <Input
@@ -197,40 +127,7 @@ Return only valid JSON without any markdown formatting or additional text.`;
         </div>
       </div>
 
-      {content && (
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <Label>SEO Title ({content.title.length}/55 characters)</Label>
-                <Input value={content.title} readOnly />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <Label>Permalink</Label>
-                <Input value={content.permalink} readOnly />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <Label>Meta Description ({content.metaDescription.length}/155 characters)</Label>
-                <textarea
-                  className="w-full min-h-[100px] p-3 rounded-md border"
-                  value={content.metaDescription}
-                  readOnly
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <ContentDisplay content={content} />
     </div>
   );
 };
