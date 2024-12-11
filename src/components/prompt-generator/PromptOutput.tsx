@@ -34,15 +34,17 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
 
     setLoading(true);
     try {
-      // Log the API key format (first few characters) for debugging
-      console.log("API Key format check:", apiKey.substring(0, 10) + "...");
+      // Clean up the API key - remove any whitespace and ensure it's properly formatted
+      const cleanApiKey = apiKey.trim();
+      
+      // Log the API request details for debugging
+      console.log("Making request to Recraft.ai API");
       
       const response = await fetch("https://api.recraft.ai/v1/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Add 'Bearer ' prefix to the API key
-          "Authorization": `Bearer ${apiKey.trim()}`
+          "Authorization": cleanApiKey.startsWith("Bearer ") ? cleanApiKey : `Bearer ${cleanApiKey}`
         },
         body: JSON.stringify({
           prompt: content,
@@ -63,7 +65,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
       console.error("Generation error:", error);
       toast({
         title: "Error",
-        description: "Failed to generate images. Please check your API key and try again.",
+        description: "Failed to generate images. Please check your API key format and try again.",
         variant: "destructive",
       });
     } finally {
