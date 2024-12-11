@@ -2,7 +2,8 @@ export const generateSEOPrompt = (title: string, inputLang: "tr" | "en", outputL
   const languageInstructions = 
     inputLang === outputLang 
       ? `Yanıtı ${inputLang === "tr" ? "Türkçe" : "İngilizce"} olarak ver.`
-      : `Başlık ${inputLang === "tr" ? "Türkçe" : "İngilizce"}, çıktıyı ${outputLang === "tr" ? "Türkçe" : "İngilizce"} olarak ver.`;
+      : `Başlık ${inputLang === "tr" ? "Türkçe" : "İngilizce"}, çıktıyı ${outputLang === "tr" ? "Türkçe" : "İngilizce"} olarak ver.
+         Önemli: Başlığı direkt çevirmek yerine, aynı anlama gelen SEO uyumlu özgün bir başlık oluştur.`;
 
   return `${languageInstructions}
 
@@ -11,7 +12,7 @@ Aşağıdaki başlık için JSON formatında yanıt ver:
 Başlık: "${title}"
 
 {
-  "title": "Bu başlığı anlamını değiştirmeden özgünleştirerek daha iyi SEO uyumlu 55 karakteri geçmeyen bir title olarak yaz",
+  "title": "Bu başlığı direkt çevirmeden, anlamını koruyarak ve SEO uyumlu olacak şekilde özgünleştirerek 55 karakteri geçmeyen bir title olarak yaz",
   "permalink": "url-friendly-permalink",
   "metaDescription": "Bu başlık için:
     - 155 karakteri geçmeyen
