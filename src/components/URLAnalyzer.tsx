@@ -5,6 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { extractUrlsFromSitemap } from "@/utils/sitemapParser";
+import { analyzeUrl } from "@/utils/urlAnalyzer";
 
 const URLAnalyzer: React.FC = () => {
   const [urls, setUrls] = useState("");
@@ -47,7 +49,7 @@ const URLAnalyzer: React.FC = () => {
     if (!urls.trim()) {
       toast({
         title: "Hata",
-        description: "Lütfen en az bir URL girin",
+        description: "Lütfen en az bir sitemap URL'si girin",
         variant: "destructive",
       });
       return;
@@ -56,7 +58,7 @@ const URLAnalyzer: React.FC = () => {
     setLoading(true);
     setProgress(0);
     const startTime = Date.now();
-    const urlList = urls.split("\n").filter(url => url.trim());
+    const sitemapUrls = urls.split("\n").filter(url => url.trim());
     const results: { [key: string]: any } = {};
 
     try {
@@ -70,75 +72,48 @@ const URLAnalyzer: React.FC = () => {
         return;
       }
 
-      for (let i = 0; i < urlList.length; i++) {
-        const url = urlList[i];
+      // Extract URLs from all sitemaps
+      let allUrls: string[] = [];
+      for (let i = 0; i < sitemapUrls.length; i++) {
+        const sitemapUrl = sitemapUrls[i].trim();
+        const extractedUrls = await extractUrlsFromSitemap(sitemapUrl);
+        allUrls = [...allUrls, ...extractedUrls];
+      }
+
+      // Remove duplicates
+      allUrls = [...new Set(allUrls)];
+
+      // Analyze each URL
+      for (let i = 0; i < allUrls.length; i++) {
+        const url = allUrls[i];
         try {
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [
-                {
-                  role: "system",
-                  content: "Sen bir SEO uzmanısın. Yanıtları sadece Türkçe olarak ver ve SADECE geçerli JSON formatında, markdown veya backtick kullanmadan döndür."
-                },
-                {
-                  role: "user",
-                  content: `Aşağıdaki URL'yi analiz et ve şu formatta yanıt ver:
-                  {
-                    "main_topics": ["ana_konu_1", "ana_konu_2"],
-                    "keywords": ["anahtar1", "anahtar2", "anahtar3"],
-                    "context": "içeriğin genel bağlamı",
-                    "content_type": "article|tutorial|info|review",
-                    "key_concepts": ["kavram1", "kavram2"],
-                    "secondary_topics": ["yan_konu_1", "yan_konu_2"]
-                  }
-                  
-                  URL: ${url.trim()}`
-                }
-              ],
-              temperature: 0.7
-            })
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || "URL analizi yapılamadı");
-          }
-
-          const data = await response.json();
-          const analysisResult = JSON.parse(data.choices[0].message.content);
+          const analysisResult = await analyzeUrl(url, apiKey);
           
-          results[url.trim()] = {
-            url: url.trim(),
+          results[url] = {
+            url,
             analysis: analysisResult,
             analyzed_at: new Date().toISOString()
           };
 
           // Progress ve kalan süre hesaplama
-          const currentProgress = ((i + 1) / urlList.length) * 100;
+          const currentProgress = ((i + 1) / allUrls.length) * 100;
           setProgress(currentProgress);
           const elapsedTime = Date.now() - startTime;
-          const remaining = calculateTimeRemaining(i + 1, urlList.length, elapsedTime);
+          const remaining = calculateTimeRemaining(i + 1, allUrls.length, elapsedTime);
           setTimeRemaining(remaining);
 
           // Her başarılı analiz sonrası state'i güncelle
           setAnalysis(results);
         } catch (error) {
           console.error(`Error analyzing ${url}:`, error);
-          results[url.trim()] = {
-            url: url.trim(),
+          results[url] = {
+            url,
             error: error instanceof Error ? error.message : "URL analizi yapılamadı",
             analyzed_at: new Date().toISOString()
           };
         }
       }
 
-      // Tüm analizler tamamlandığında
       toast({
         description: "URL analizleri tamamlandı",
       });
@@ -163,9 +138,9 @@ const URLAnalyzer: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label>URL Analizi</Label>
+        <Label>Sitemap URL Analizi</Label>
         <Textarea
-          placeholder="Analiz edilecek URL'leri her satıra bir tane gelecek şekilde girin"
+          placeholder="Analiz edilecek sitemap URL'lerini her satıra bir tane gelecek şekilde girin"
           value={urls}
           onChange={(e) => setUrls(e.target.value)}
           className="min-h-[200px]"
@@ -182,7 +157,7 @@ const URLAnalyzer: React.FC = () => {
                 Analiz Ediliyor...
               </>
             ) : (
-              "URL'leri Analiz Et"
+              "Sitemap'leri Analiz Et"
             )}
           </Button>
           {analysis && (
