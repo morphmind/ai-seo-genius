@@ -1,5 +1,12 @@
-export const generateSEOPrompt = (title: string) => {
-  return `Sen SEO meta veri yazmada uzmansın. Aşağıdaki başlık için JSON formatında yanıt ver:
+export const generateSEOPrompt = (title: string, inputLang: "tr" | "en", outputLang: "tr" | "en") => {
+  const languageInstructions = 
+    inputLang === outputLang 
+      ? `Yanıtı ${inputLang === "tr" ? "Türkçe" : "İngilizce"} olarak ver.`
+      : `Başlık ${inputLang === "tr" ? "Türkçe" : "İngilizce"}, çıktıyı ${outputLang === "tr" ? "Türkçe" : "İngilizce"} olarak ver.`;
+
+  return `${languageInstructions}
+
+Aşağıdaki başlık için JSON formatında yanıt ver:
 
 Başlık: "${title}"
 
@@ -26,6 +33,6 @@ export const parseAIResponse = (responseText: string): any => {
   } catch (error) {
     console.error("JSON parsing error:", error);
     console.log("Raw response:", responseText);
-    throw new Error("Invalid response format from AI");
+    throw new Error("AI yanıtı geçersiz format içeriyor");
   }
 };

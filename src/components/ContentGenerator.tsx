@@ -8,6 +8,7 @@ import { GeneratedContent, Provider, Model } from "@/types/content";
 import { generateSEOPrompt, parseAIResponse } from "@/utils/prompts";
 import ModelSelector from "./ModelSelector";
 import ContentDisplay from "./ContentDisplay";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const ContentGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
@@ -15,13 +16,15 @@ const ContentGenerator = () => {
   const [content, setContent] = useState<GeneratedContent | null>(null);
   const [provider, setProvider] = useState<Provider>("openai");
   const [model, setModel] = useState<Model>("gpt-4o-mini");
+  const [inputLanguage, setInputLanguage] = useState<"tr" | "en">("tr");
+  const [outputLanguage, setOutputLanguage] = useState<"tr" | "en">("tr");
   const { toast } = useToast();
 
   const handleGenerate = async () => {
     if (!inputTitle.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter an article title",
+        title: "Hata",
+        description: "Lütfen bir başlık girin",
         variant: "destructive",
       });
       return;
@@ -33,8 +36,8 @@ const ContentGenerator = () => {
 
     if (!apiKey) {
       toast({
-        title: "Error",
-        description: `Please set your ${provider === "openai" ? "OpenAI" : "Anthropic"} API key in settings`,
+        title: "Hata",
+        description: `Lütfen ${provider === "openai" ? "OpenAI" : "Anthropic"} API anahtarınızı ayarlarda belirtin`,
         variant: "destructive",
       });
       return;
@@ -42,7 +45,7 @@ const ContentGenerator = () => {
 
     setLoading(true);
     try {
-      const prompt = generateSEOPrompt(inputTitle);
+      const prompt = generateSEOPrompt(inputTitle, inputLanguage, outputLanguage);
       
       if (provider === "openai") {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -69,7 +72,7 @@ const ContentGenerator = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error?.message || "Failed to generate content");
+          throw new Error(errorData.error?.message || "İçerik oluşturulamadı");
         }
 
         const data = await response.json();
@@ -77,15 +80,15 @@ const ContentGenerator = () => {
         setContent(generatedContent);
       } else {
         toast({
-          title: "Info",
-          description: "Anthropic API integration coming soon",
+          title: "Bilgi",
+          description: "Anthropic API entegrasyonu yakında gelecek",
         });
       }
     } catch (error) {
       console.error("Generation error:", error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate content. Please try again.",
+        title: "Hata",
+        description: error instanceof Error ? error.message : "İçerik oluşturulamadı. Lütfen tekrar deneyin.",
         variant: "destructive",
       });
     } finally {
@@ -103,10 +106,48 @@ const ContentGenerator = () => {
           onModelChange={setModel}
         />
         
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Giriş Dili</Label>
+            <RadioGroup
+              value={inputLanguage}
+              onValueChange={(value: "tr" | "en") => setInputLanguage(value)}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="tr" id="input-tr" />
+                <Label htmlFor="input-tr">Türkçe</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="en" id="input-en" />
+                <Label htmlFor="input-en">İngilizce</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Çıktı Dili</Label>
+            <RadioGroup
+              value={outputLanguage}
+              onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="tr" id="output-tr" />
+                <Label htmlFor="output-tr">Türkçe</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="en" id="output-en" />
+                <Label htmlFor="output-en">İngilizce</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </div>
+
         <div className="space-y-2">
-          <Label>Article Title</Label>
+          <Label>Makale Başlığı</Label>
           <Input
-            placeholder="Enter your article title"
+            placeholder={`Başlığı ${inputLanguage === "tr" ? "Türkçe" : "İngilizce"} girin`}
             value={inputTitle}
             onChange={(e) => setInputTitle(e.target.value)}
           />
@@ -118,10 +159,10 @@ const ContentGenerator = () => {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
+                Oluşturuluyor...
               </>
             ) : (
-              "Generate Content"
+              "İçerik Oluştur"
             )}
           </Button>
         </div>
