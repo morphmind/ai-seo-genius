@@ -16,28 +16,26 @@ const ImagePromptGenerator = () => {
   const { toast } = useToast();
 
   const generatePromptTemplate = (title: string) => {
-    return `Sen blog yazıları için görsel prompt oluşturmada uzman bir asistansın. Aşağıdaki başlık için detaylı bir görsel prompt oluştur:
+    return `You are an expert assistant in creating visual prompts for blog post images. Create a detailed visual prompt for the following title:
 
-Başlık: "${title}"
+Title: "${title}"
 
-Bu başlık için:
-- İllüstrasyon tarzında (gerçekçi veya fotoğrafik değil)
-- Sade ve çok karmaşık olmayan
-- Başlığın konusunu ve anlamını net bir şekilde temsil eden
-- Renk, kompozisyon ve atmosfer detaylarını içeren
-- Konuyla alakalı yaratıcı ve ilgi çekici
-- Telif hakkı olan karakterler veya öğeler içermeyen
+For this title, create a prompt that describes:
+- An illustration style image (not realistic or photographic)
+- Simple and not overly complex
+- Clearly represents the topic and meaning of the title
+- Includes details about colors, composition, and atmosphere
+- Creative and engaging while relevant to the topic
+- Does not include any copyrighted characters or elements
 
-bir görsel için prompt oluştur.
-
-Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması gerektiğini betimleyerek ver.`;
+Provide your response as a single detailed paragraph describing exactly what should be in the image.`;
   };
 
   const handleGenerate = async () => {
     if (!inputTitle.trim()) {
       toast({
-        title: "Hata",
-        description: "Lütfen bir başlık girin",
+        title: "Error",
+        description: "Please enter a title",
         variant: "destructive",
       });
       return;
@@ -49,8 +47,8 @@ Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması ge
 
     if (!apiKey) {
       toast({
-        title: "Hata",
-        description: `Lütfen ${provider === "openai" ? "OpenAI" : "Anthropic"} API anahtarınızı ayarlarda belirleyin`,
+        title: "Error",
+        description: `Please set your ${provider === "openai" ? "OpenAI" : "Anthropic"} API key in settings`,
         variant: "destructive",
       });
       return;
@@ -59,9 +57,8 @@ Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması ge
     setLoading(true);
     try {
       const promptTemplate = generatePromptTemplate(inputTitle);
-      console.log("GPT'ye gönderiliyor:", promptTemplate);
+      console.log("Sending to GPT:", promptTemplate);
       
-      // OpenAI API çağrısı yapılacak
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -81,7 +78,7 @@ Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması ge
       });
 
       if (!response.ok) {
-        throw new Error("API yanıtı başarısız");
+        throw new Error("API response failed");
       }
 
       const data = await response.json();
@@ -90,8 +87,8 @@ Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması ge
       
     } catch (error) {
       toast({
-        title: "Hata",
-        description: "Prompt oluşturulamadı. Lütfen tekrar deneyin.",
+        title: "Error",
+        description: "Prompt could not be generated. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -102,8 +99,8 @@ Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması ge
   const handleCopy = () => {
     navigator.clipboard.writeText(prompt);
     toast({
-      title: "Başarılı",
-      description: "Prompt panoya kopyalandı",
+      title: "Success",
+      description: "Prompt copied to clipboard",
     });
   };
 
@@ -118,7 +115,7 @@ Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması ge
 
       <div className="space-y-2">
         <Input
-          placeholder="Makale başlığınızı girin"
+          placeholder="Enter your article title"
           value={inputTitle}
           onChange={(e) => setInputTitle(e.target.value)}
         />
@@ -130,10 +127,10 @@ Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması ge
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Oluşturuluyor...
+              Generating...
             </>
           ) : (
-            "Görsel Promptu Oluştur"
+            "Generate Visual Prompt"
           )}
         </Button>
       </div>
