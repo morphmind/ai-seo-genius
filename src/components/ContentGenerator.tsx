@@ -14,7 +14,7 @@ const ContentGenerator = () => {
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState<GeneratedContent | null>(null);
   const [provider, setProvider] = useState<Provider>("openai");
-  const [model, setModel] = useState<Model>("gpt-4o");
+  const [model, setModel] = useState<Model>("gpt-4o-mini");
   const { toast } = useToast();
 
   const handleGenerate = async () => {
