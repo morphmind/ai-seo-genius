@@ -7,6 +7,14 @@ import FileUploader from "./internal-linking/FileUploader";
 import LinkingMethodSelector from "./internal-linking/LinkingMethodSelector";
 import ArticleInput from "./internal-linking/ArticleInput";
 import ProcessButton from "./internal-linking/ProcessButton";
+import LinkReport from "./internal-linking/LinkReport";
+
+interface ProcessedLink {
+  url: string;
+  anchorText: string;
+  position: string;
+  similarityScore: number;
+}
 
 const InternalLinkGenerator = () => {
   const [urlDatabase, setUrlDatabase] = useState<File | null>(null);
@@ -14,7 +22,48 @@ const InternalLinkGenerator = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [linkingMethod, setLinkingMethod] = useState<"manual" | "auto">("manual");
   const [manualLinkCount, setManualLinkCount] = useState("3");
+  const [processedLinks, setProcessedLinks] = useState<ProcessedLink[]>([]);
+  const [processedContent, setProcessedContent] = useState<string>("");
   const { toast } = useToast();
+
+  const insertLinks = (content: string, links: ProcessedLink[]): string => {
+    let processedHtml = content;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(processedHtml, 'text/html');
+    
+    links.forEach(link => {
+      const paragraphs = doc.getElementsByTagName('p');
+      const position = parseInt(link.position.split('_')[1]);
+      
+      if (paragraphs[position]) {
+        const linkContainer = doc.createElement('div');
+        linkContainer.className = 'related-content';
+        linkContainer.style.cssText = `
+          margin: 20px 0;
+          padding: 15px;
+          background-color: #f8f9fa;
+          border-left: 3px solid #7952b3;
+          border-radius: 3px;
+          font-style: italic;
+          color: #555;
+        `;
+
+        const linkElement = doc.createElement('a');
+        linkElement.href = link.url;
+        linkElement.textContent = link.anchorText;
+        linkElement.style.cssText = `
+          color: #7952b3;
+          text-decoration: none;
+          font-weight: 500;
+        `;
+
+        linkContainer.appendChild(linkElement);
+        paragraphs[position].parentNode?.insertBefore(linkContainer, paragraphs[position].nextSibling);
+      }
+    });
+
+    return doc.body.innerHTML;
+  };
 
   const processContent = async () => {
     if (!urlDatabase || !articleContent.trim()) {
@@ -65,14 +114,27 @@ const InternalLinkGenerator = () => {
       );
 
       // Link önerileri oluştur
-      const processedUrls = contentAnalyzer.extractUrlsWithKeywords(relevantContent);
+      const processedUrls = await contentAnalyzer.extractUrlsWithKeywords(relevantContent);
       
+      // Link pozisyonlarını hesapla ve linkleri ekle
+      const links: ProcessedLink[] = processedUrls.map((url, index) => ({
+        url: url.url,
+        anchorText: url.keyword,
+        position: `paragraph_${Math.min(3 + index * 2, paragraphs.length - 1)}`,
+        similarityScore: url.similarity
+      }));
+
+      // Linkleri içeriğe ekle
+      const linkedContent = insertLinks(articleContent, links);
+      setProcessedContent(linkedContent);
+      setProcessedLinks(links);
+
       // İşlenmiş makaleyi indir
-      const blob = new Blob([JSON.stringify(processedUrls, null, 2)], { type: "application/json" });
+      const blob = new Blob([linkedContent], { type: "text/html" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "processed_article.json";
+      a.download = "makale_linked.txt";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -123,6 +185,10 @@ const InternalLinkGenerator = () => {
           </div>
         </CardContent>
       </Card>
+
+      {processedLinks.length > 0 && (
+        <LinkReport links={processedLinks} content={processedContent} />
+      )}
     </div>
   );
 };
