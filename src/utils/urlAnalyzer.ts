@@ -27,13 +27,18 @@ export const analyzeUrl = async (url: string, apiKey: string): Promise<any> => {
 
     const html = await response.text();
     
-    // Extract basic metadata
-    const title = html.match(/<title>(.*?)<\/title>/i)?.[1] || '';
-    const description = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i)?.[1] || '';
+    // Parse HTML content using DOMParser
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    // Extract metadata
+    const title = doc.querySelector('title')?.textContent || '';
+    const description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+    const content = doc.body?.textContent?.slice(0, 3000) || ''; // First 3000 chars like Python version
     
     console.log('Extracted metadata:', { title, description });
     
-    // Send to OpenAI for analysis
+    // Send to OpenAI for analysis with improved prompt
     const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -45,17 +50,18 @@ export const analyzeUrl = async (url: string, apiKey: string): Promise<any> => {
         messages: [
           {
             role: "system",
-            content: "Sen bir SEO uzmanısın. Yanıtları sadece Türkçe olarak ver ve SADECE geçerli JSON formatında, markdown veya backtick kullanmadan döndür."
+            content: "Sen bir SEO ve içerik analiz uzmanısın. İçeriği detaylı analiz et ve belirtilen formatta JSON yanıtı döndür. Yanıtlar sadece Türkçe olmalı."
           },
           {
             role: "user",
-            content: `Aşağıdaki URL ve içeriği analiz et:
+            content: `Aşağıdaki içeriği detaylı analiz et.
             
             URL: ${url}
             Başlık: ${title}
             Açıklama: ${description}
+            İçerik: ${content}
             
-            Şu formatta yanıt ver:
+            İçeriği tüm yönleriyle analiz et ve şu formatta yanıt ver:
             {
               "main_topics": ["ana_konu_1", "ana_konu_2"],
               "keywords": ["anahtar1", "anahtar2", "anahtar3"],

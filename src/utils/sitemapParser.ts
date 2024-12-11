@@ -11,18 +11,22 @@ export const extractUrlsFromSitemap = async (sitemapUrl: string): Promise<string
   try {
     console.log('Fetching sitemap:', sitemapUrl);
     
-    // Try fetching with proxy first
+    // Use proxy to avoid CORS issues
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(sitemapUrl)}`;
-    const proxyResponse = await fetch(proxyUrl);
+    const response = await fetch(proxyUrl, {
+      headers: {
+        'User-Agent': 'PostmanRuntime/7.32.3'
+      }
+    });
     
-    if (!proxyResponse.ok) {
-      throw new Error(`Proxy fetch failed with status: ${proxyResponse.status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const xmlText = await proxyResponse.text();
+    const xmlText = await response.text();
     
     if (!xmlText || xmlText.trim() === '') {
-      throw new Error('Empty response received from proxy');
+      throw new Error('Empty response received');
     }
     
     console.log('Successfully fetched XML content');
