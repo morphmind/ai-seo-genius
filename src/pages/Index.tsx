@@ -16,8 +16,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
-            AI SEO Tools
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[rgb(186,73,73)] to-[rgb(186,73,73,0.7)] bg-clip-text text-transparent dark:from-[rgb(186,73,73,0.8)] dark:to-[rgb(186,73,73,0.5)]">
+            KAho Write Tools
           </h1>
           <div className="flex gap-2">
             <Button
