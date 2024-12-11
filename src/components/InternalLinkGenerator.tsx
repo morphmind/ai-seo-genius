@@ -9,6 +9,7 @@ import { Loader2, Upload } from "lucide-react";
 declare global {
   interface Window {
     pyodide: any;
+    loadPyodide: () => Promise<any>;
   }
 }
 
@@ -64,7 +65,7 @@ const InternalLinkGenerator = () => {
     try {
       // Pyodide'yi yükle
       if (!window.pyodide) {
-        window.pyodide = await loadPyodide();
+        window.pyodide = await window.loadPyodide();
       }
 
       // Dosyaları oku
