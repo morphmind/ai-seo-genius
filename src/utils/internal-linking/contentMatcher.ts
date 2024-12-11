@@ -1,12 +1,13 @@
 import { SimilarityCalculator } from './similarityCalculator';
 
 interface AnalysisResult {
-  main_topics: string[];
-  keywords: string[];
-  context: string;
-  content_type: string;
-  key_concepts: string[];
-  secondary_topics: string[];
+  ana_konular: string[];
+  anahtar_kelime: string[];
+  bağlam: {
+    genel: string;
+    hedef_kitle: string;
+    amaç: string;
+  };
 }
 
 interface URLData {
@@ -29,10 +30,10 @@ export class ContentMatcher {
     // Calculate similarity scores
     const scoredUrls = availableUrls.map(urlData => {
       const similarity = this.similarityCalculator.calculateContentSimilarity(
-        articleAnalysis.main_topics.concat(articleAnalysis.keywords),
-        urlData.analysis.main_topics.concat(urlData.analysis.keywords),
-        articleAnalysis.context,
-        urlData.analysis.context
+        articleAnalysis.ana_konular.concat(articleAnalysis.anahtar_kelime),
+        urlData.analysis?.ana_konular?.concat(urlData.analysis?.anahtar_kelime) || [],
+        articleAnalysis.bağlam.genel,
+        urlData.analysis?.bağlam?.genel || ''
       );
 
       return { ...urlData, similarity };
