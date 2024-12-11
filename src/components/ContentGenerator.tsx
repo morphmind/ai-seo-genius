@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { GeneratedContent, Provider, Model, ContentType, OutputType } from "@/types/content";
+import { GeneratedContent, Provider, Model, ContentType } from "@/types/content";
 import { generateSEOPrompt, generateFAQPrompt, parseAIResponse } from "@/utils/prompts";
 import ModelSelector from "./ModelSelector";
 import ContentDisplay from "./ContentDisplay";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 const ContentGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
@@ -19,7 +20,7 @@ const ContentGenerator = () => {
   const [inputLanguage, setInputLanguage] = useState<"tr" | "en">("tr");
   const [outputLanguage, setOutputLanguage] = useState<"tr" | "en">("tr");
   const [contentType, setContentType] = useState<ContentType>("seo");
-  const [outputType, setOutputType] = useState<OutputType>("text");
+  const [includeFAQ, setIncludeFAQ] = useState(false);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -47,10 +48,27 @@ const ContentGenerator = () => {
 
     setLoading(true);
     try {
-      const prompt = contentType === "seo" 
-        ? generateSEOPrompt(inputTitle, inputLanguage, outputLanguage)
-        : generateFAQPrompt(inputTitle, inputLanguage, outputLanguage, outputType);
+      const seoPrompt = generateSEOPrompt(inputTitle, inputLanguage, outputLanguage);
+      const faqPrompt = includeFAQ ? generateFAQPrompt(inputTitle, inputLanguage, outputLanguage) : null;
       
+      const prompts = [
+        {
+          role: "system",
+          content: "You are an SEO expert. Always respond with valid JSON only."
+        },
+        {
+          role: "user",
+          content: seoPrompt
+        }
+      ];
+
+      if (faqPrompt) {
+        prompts.push({
+          role: "user",
+          content: faqPrompt
+        });
+      }
+
       if (provider === "openai") {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
@@ -60,16 +78,7 @@ const ContentGenerator = () => {
           },
           body: JSON.stringify({
             model: model,
-            messages: [
-              {
-                role: "system",
-                content: "You are an SEO expert. Always respond with valid JSON only."
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
+            messages: prompts,
             temperature: 0.7
           })
         });
@@ -110,7 +119,7 @@ const ContentGenerator = () => {
           onModelChange={setModel}
         />
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>İçerik Türü</Label>
             <Select value={contentType} onValueChange={(value: ContentType) => setContentType(value)}>
@@ -119,31 +128,15 @@ const ContentGenerator = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="seo">Makale Ögeleri</SelectItem>
-                <SelectItem value="faq">Makale Ögeleri + FAQ</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Çıktı Türü</Label>
-            <Select value={outputType} onValueChange={(value: OutputType) => setOutputType(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Çıktı türü seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Normal Metin</SelectItem>
-                <SelectItem value="schema">Schema Markup</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Giriş Dili</Label>
             <Select value={inputLanguage} onValueChange={(value: "tr" | "en") => setInputLanguage(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Giriş dili seçin" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="tr">Türkçe</SelectItem>
@@ -156,7 +149,7 @@ const ContentGenerator = () => {
             <Label>Çıkış Dili</Label>
             <Select value={outputLanguage} onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Çıkış dili seçin" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="tr">Türkçe</SelectItem>
@@ -164,6 +157,15 @@ const ContentGenerator = () => {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="faq-mode"
+            checked={includeFAQ}
+            onCheckedChange={setIncludeFAQ}
+          />
+          <Label htmlFor="faq-mode">FAQ Ekle</Label>
         </div>
 
         <div className="space-y-2">
@@ -190,7 +192,7 @@ const ContentGenerator = () => {
         </div>
       </div>
 
-      <ContentDisplay content={content} contentType={contentType} outputType={outputType} />
+      <ContentDisplay content={content} includeFAQ={includeFAQ} />
     </div>
   );
 };

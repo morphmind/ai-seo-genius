@@ -7,7 +7,18 @@ export interface GeneratedContent {
       question: string;
       answer: string;
     }>;
-    schema?: string;
+    schema: {
+      "@context": string;
+      "@type": string;
+      mainEntity: Array<{
+        "@type": string;
+        name: string;
+        acceptedAnswer: {
+          "@type": string;
+          text: string;
+        };
+      }>;
+    };
   };
 }
 
@@ -21,4 +32,3 @@ export type Model =
   | "claude-3-opus";
 
 export type ContentType = "seo" | "faq";
-export type OutputType = "text" | "schema";
