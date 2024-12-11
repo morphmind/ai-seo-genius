@@ -16,19 +16,16 @@ const ImagePromptGenerator = () => {
   const { toast } = useToast();
 
   const generatePromptTemplate = (title: string) => {
-    return `You are an expert assistant in creating visual prompts for blog post images. Create a detailed visual prompt for the following title:
+    return `Create a concise visual prompt (max 800 characters) for an illustration based on this title: "${title}"
 
-Title: "${title}"
+Guidelines:
+- Illustration style (not realistic/photographic)
+- Simple, clear representation of the topic
+- Include key visual elements and colors
+- No copyrighted elements
+- Keep the description focused and brief
 
-For this title, create a prompt that describes:
-- An illustration style image (not realistic or photographic)
-- Simple and not overly complex
-- Clearly represents the topic and meaning of the title
-- Includes details about colors, composition, and atmosphere
-- Creative and engaging while relevant to the topic
-- Does not include any copyrighted characters or elements
-
-Provide your response as a single detailed paragraph describing exactly what should be in the image.`;
+Respond with a single short paragraph.`;
   };
 
   const handleGenerate = async () => {
