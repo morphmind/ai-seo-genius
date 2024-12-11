@@ -164,7 +164,7 @@ const URLAnalyzer = () => {
               5. Content depth analysis (level and key concepts)
               6. Whether it's a blog post or not
               
-              Format the response as a valid JSON object with these exact fields:
+              Return ONLY a valid JSON object with these fields (no markdown, no backticks):
               {
                 "main_topics": [],
                 "keywords": [],
@@ -184,11 +184,11 @@ const URLAnalyzer = () => {
                   "Authorization": `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                  model: "gpt-4o-mini",
+                  model: "gpt-4o",
                   messages: [
                     {
                       role: "system",
-                      content: "You are an SEO expert. Always respond with valid JSON only, matching the exact structure provided."
+                      content: "You are an SEO expert. Return ONLY valid JSON without any markdown formatting or backticks."
                     },
                     {
                       role: "user",
@@ -208,7 +208,9 @@ const URLAnalyzer = () => {
               
               try {
                 const content = data.choices[0].message.content;
-                analysis = JSON.parse(content.trim());
+                // Remove any potential markdown or backticks from the content
+                const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+                analysis = JSON.parse(cleanContent);
               } catch (parseError) {
                 console.error("JSON parse error:", parseError);
                 analysis = {
