@@ -119,51 +119,51 @@ const ContentGenerator = () => {
         />
         
         <div className="space-y-4">
-          <div className="flex flex-col space-y-4">
-            <div className="space-y-2">
-              <Label>Giriş Dili</Label>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Label className="whitespace-nowrap">Giriş Dili:</Label>
               <RadioGroup
                 value={inputLanguage}
                 onValueChange={(value: "tr" | "en") => setInputLanguage(value)}
-                className="flex space-x-4"
+                className="flex gap-3"
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1.5">
                   <RadioGroupItem value="tr" id="input-tr" />
-                  <Label htmlFor="input-tr">Türkçe</Label>
+                  <Label htmlFor="input-tr" className="cursor-pointer">TR</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1.5">
                   <RadioGroupItem value="en" id="input-en" />
-                  <Label htmlFor="input-en">İngilizce</Label>
+                  <Label htmlFor="input-en" className="cursor-pointer">EN</Label>
                 </div>
               </RadioGroup>
             </div>
 
-            <div className="space-y-2">
-              <Label>Çıkış Dili</Label>
+            <div className="flex items-center gap-2">
+              <Label className="whitespace-nowrap">Çıkış Dili:</Label>
               <RadioGroup
                 value={outputLanguage}
                 onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}
-                className="flex space-x-4"
+                className="flex gap-3"
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1.5">
                   <RadioGroupItem value="tr" id="output-tr" />
-                  <Label htmlFor="output-tr">Türkçe</Label>
+                  <Label htmlFor="output-tr" className="cursor-pointer">TR</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1.5">
                   <RadioGroupItem value="en" id="output-en" />
-                  <Label htmlFor="output-en">İngilizce</Label>
+                  <Label htmlFor="output-en" className="cursor-pointer">EN</Label>
                 </div>
               </RadioGroup>
             </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="faq-mode"
-              checked={includeFAQ}
-              onCheckedChange={setIncludeFAQ}
-            />
-            <Label htmlFor="faq-mode">FAQ Ekle</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="faq-mode" className="cursor-pointer">FAQ</Label>
+              <Switch
+                id="faq-mode"
+                checked={includeFAQ}
+                onCheckedChange={setIncludeFAQ}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
