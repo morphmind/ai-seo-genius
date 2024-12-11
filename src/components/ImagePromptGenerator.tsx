@@ -4,11 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy } from "lucide-react";
+import { Provider, Model } from "@/types/content";
+import ModelSelector from "./ModelSelector";
 
 const ImagePromptGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [prompt, setPrompt] = useState<string>("");
+  const [provider, setProvider] = useState<Provider>("openai");
+  const [model, setModel] = useState<Model>("gpt-4o-mini");
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -21,11 +25,14 @@ const ImagePromptGenerator = () => {
       return;
     }
 
-    const apiKey = localStorage.getItem("anthropic_api_key");
+    const apiKey = provider === "openai" 
+      ? localStorage.getItem("openai_api_key")
+      : localStorage.getItem("anthropic_api_key");
+
     if (!apiKey) {
       toast({
         title: "Error",
-        description: "Please set your Anthropic API key in settings",
+        description: `Please set your ${provider === "openai" ? "OpenAI" : "Anthropic"} API key in settings`,
         variant: "destructive",
       });
       return;
@@ -57,6 +64,13 @@ const ImagePromptGenerator = () => {
 
   return (
     <div className="space-y-6">
+      <ModelSelector 
+        provider={provider}
+        model={model}
+        onProviderChange={setProvider}
+        onModelChange={setModel}
+      />
+
       <div className="space-y-2">
         <Input
           placeholder="Enter your article title"

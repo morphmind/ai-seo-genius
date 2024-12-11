@@ -5,4 +5,10 @@ export interface GeneratedContent {
 }
 
 export type Provider = "openai" | "anthropic";
-export type Model = "gpt-4o" | "gpt-4o-mini" | "gpt-4" | "gpt-4-turbo" | "gpt-3.5-turbo" | "claude-3-opus" | "claude-3-sonnet" | "claude-3-haiku";
+export type Model = 
+  | "gpt-4o" 
+  | "gpt-4o-mini" 
+  | "o1-mini" 
+  | "claude-3.5-sonnet-2024-10-22" 
+  | "claude-3.5-haiku" 
+  | "claude-3-opus";
