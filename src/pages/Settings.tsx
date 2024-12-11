@@ -9,10 +9,11 @@ import { useNavigate } from "react-router-dom";
 const Settings = () => {
   const [showOpenAI, setShowOpenAI] = useState(false);
   const [showAnthropic, setShowAnthropic] = useState(false);
+  const [showRecraft, setShowRecraft] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSave = (type: "openai" | "anthropic", value: string) => {
+  const handleSave = (type: "openai" | "anthropic" | "recraft", value: string) => {
     if (!value.trim()) {
       toast({
         title: "Error",
@@ -102,6 +103,33 @@ const Settings = () => {
                 onClick={() => setShowAnthropic(!showAnthropic)}
               >
                 {showAnthropic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recraft.ai API Key</CardTitle>
+            <CardDescription>
+              Enter your Recraft.ai API key for image generation
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="relative">
+              <Input
+                type={showRecraft ? "text" : "password"}
+                placeholder="Enter your Recraft.ai API key"
+                defaultValue={localStorage.getItem("recraft_api_key") || ""}
+                onChange={(e) => handleSave("recraft", e.target.value)}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+                onClick={() => setShowRecraft(!showRecraft)}
+              >
+                {showRecraft ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
           </CardContent>

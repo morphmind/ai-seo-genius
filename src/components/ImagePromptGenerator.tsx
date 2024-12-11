@@ -150,11 +150,13 @@ Respond with a single short paragraph.`;
             title="With Title"
             content={prompt}
             onCopy={handleCopy}
+            inputTitle={inputTitle}
           />
           <PromptOutput
             title="Without Title"
             content={promptWithoutTitle}
             onCopy={handleCopy}
+            inputTitle={inputTitle}
           />
         </div>
       )}
