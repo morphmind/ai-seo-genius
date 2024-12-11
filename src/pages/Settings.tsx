@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
   const [showOpenAI, setShowOpenAI] = useState(false);
   const [showAnthropic, setShowAnthropic] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSave = (type: "openai" | "anthropic", value: string) => {
     if (!value.trim()) {
@@ -30,7 +31,26 @@ const Settings = () => {
 
   return (
     <div className="container max-w-2xl py-10">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-3xl font-bold">Settings</h1>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/")}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
       
       <div className="space-y-6">
         <Card>
