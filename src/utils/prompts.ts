@@ -7,8 +7,6 @@ export const generateSEOPrompt = (title: string, inputLang: "tr" | "en", outputL
 
   return `${languageInstructions}
 
-Aşağıdaki başlık için JSON formatında yanıt ver:
-
 Başlık: "${title}"
 
 {
@@ -22,6 +20,43 @@ Başlık: "${title}"
     - Kullanıcının ilgisini çekecek
     - Doğal bir dille yazılmış
     bir description yaz"
+}`;
+};
+
+export const generateFAQPrompt = (title: string, inputLang: "tr" | "en", outputLang: "tr" | "en", outputType: "text" | "schema") => {
+  const languageInstructions = 
+    inputLang === outputLang 
+      ? `Yanıtı ${inputLang === "tr" ? "Türkçe" : "İngilizce"} olarak ver.`
+      : `Başlık ${inputLang === "tr" ? "Türkçe" : "İngilizce"}, çıktıyı ${outputLang === "tr" ? "Türkçe" : "İngilizce"} olarak ver.`;
+
+  const schemaInstructions = outputType === "schema" 
+    ? `\nÖnemli: FAQ içeriğini hem normal metin olarak hem de FAQPage schema markup formatında ver.`
+    : "";
+
+  return `${languageInstructions}${schemaInstructions}
+
+Başlık: "${title}"
+
+Bu başlık için:
+- 5-10 arası soru ve cevap oluştur
+- Sorular SEO açısından değerli ve kullanıcıların arayabileceği şekilde olsun
+- Cevaplar detaylı ve bilgilendirici olsun
+- Her cevap en az 2-3 cümle olsun
+
+Yanıtı şu JSON formatında ver:
+
+{
+  "title": "Bu başlığı SEO uyumlu olacak şekilde özgünleştirerek 55 karakteri geçmeyen bir title olarak yaz",
+  "permalink": "url-friendly-permalink",
+  "metaDescription": "SEO uyumlu 155 karakteri geçmeyen bir description",
+  "faq": {
+    "questions": [
+      {
+        "question": "Soru metni",
+        "answer": "Cevap metni"
+      }
+    ]${outputType === "schema" ? ',\n    "schema": "FAQPage schema markup kodu"' : ""}
+  }
 }
 
 Sadece JSON formatında yanıt ver, başka bir şey ekleme.`;

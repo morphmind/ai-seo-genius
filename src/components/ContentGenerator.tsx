@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { GeneratedContent, Provider, Model } from "@/types/content";
-import { generateSEOPrompt, parseAIResponse } from "@/utils/prompts";
+import { GeneratedContent, Provider, Model, ContentType, OutputType } from "@/types/content";
+import { generateSEOPrompt, generateFAQPrompt, parseAIResponse } from "@/utils/prompts";
 import ModelSelector from "./ModelSelector";
 import ContentDisplay from "./ContentDisplay";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ContentGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
@@ -18,6 +18,8 @@ const ContentGenerator = () => {
   const [model, setModel] = useState<Model>("gpt-4o-mini");
   const [inputLanguage, setInputLanguage] = useState<"tr" | "en">("tr");
   const [outputLanguage, setOutputLanguage] = useState<"tr" | "en">("tr");
+  const [contentType, setContentType] = useState<ContentType>("seo");
+  const [outputType, setOutputType] = useState<OutputType>("text");
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -45,7 +47,9 @@ const ContentGenerator = () => {
 
     setLoading(true);
     try {
-      const prompt = generateSEOPrompt(inputTitle, inputLanguage, outputLanguage);
+      const prompt = contentType === "seo" 
+        ? generateSEOPrompt(inputTitle, inputLanguage, outputLanguage)
+        : generateFAQPrompt(inputTitle, inputLanguage, outputLanguage, outputType);
       
       if (provider === "openai") {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -108,39 +112,57 @@ const ContentGenerator = () => {
         
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Giriş Dili</Label>
-            <RadioGroup
-              value={inputLanguage}
-              onValueChange={(value: "tr" | "en") => setInputLanguage(value)}
-              className="flex gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="tr" id="input-tr" />
-                <Label htmlFor="input-tr">Türkçe</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="en" id="input-en" />
-                <Label htmlFor="input-en">İngilizce</Label>
-              </div>
-            </RadioGroup>
+            <Label>İçerik Türü</Label>
+            <Select value={contentType} onValueChange={(value: ContentType) => setContentType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="İçerik türü seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="seo">SEO İçeriği</SelectItem>
+                <SelectItem value="faq">Soru & Cevap (FAQ)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>Çıktı Dili</Label>
-            <RadioGroup
-              value={outputLanguage}
-              onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}
-              className="flex gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="tr" id="output-tr" />
-                <Label htmlFor="output-tr">Türkçe</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="en" id="output-en" />
-                <Label htmlFor="output-en">İngilizce</Label>
-              </div>
-            </RadioGroup>
+            <Label>Çıktı Türü</Label>
+            <Select value={outputType} onValueChange={(value: OutputType) => setOutputType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Çıktı türü seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="text">Normal Metin</SelectItem>
+                <SelectItem value="schema">Schema Markup</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Giriş Dili</Label>
+            <Select value={inputLanguage} onValueChange={(value: "tr" | "en") => setInputLanguage(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Giriş dili seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tr">Türkçe</SelectItem>
+                <SelectItem value="en">İngilizce</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Çıkış Dili</Label>
+            <Select value={outputLanguage} onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Çıkış dili seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tr">Türkçe</SelectItem>
+                <SelectItem value="en">İngilizce</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -168,7 +190,7 @@ const ContentGenerator = () => {
         </div>
       </div>
 
-      <ContentDisplay content={content} />
+      <ContentDisplay content={content} contentType={contentType} outputType={outputType} />
     </div>
   );
 };

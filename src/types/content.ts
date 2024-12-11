@@ -2,6 +2,13 @@ export interface GeneratedContent {
   title: string;
   permalink: string;
   metaDescription: string;
+  faq?: {
+    questions: Array<{
+      question: string;
+      answer: string;
+    }>;
+    schema?: string;
+  };
 }
 
 export type Provider = "openai" | "anthropic";
@@ -12,3 +19,6 @@ export type Model =
   | "claude-3.5-sonnet-2024-10-22" 
   | "claude-3.5-haiku" 
   | "claude-3-opus";
+
+export type ContentType = "seo" | "faq";
+export type OutputType = "text" | "schema";
