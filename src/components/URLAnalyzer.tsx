@@ -26,12 +26,12 @@ const URLAnalyzer = () => {
 
   const fetchUrlContent = async (url: string) => {
     try {
-      const response = await fetch(url, {
+      // First try with a proxy service
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl, {
         headers: {
           'User-Agent': getRandomUserAgent(),
         },
-        // SSL sertifika hatalarını yoksay
-        mode: 'no-cors'
       });
       
       if (!response.ok) {
@@ -40,9 +40,28 @@ const URLAnalyzer = () => {
       
       const text = await response.text();
       return text;
-    } catch (error) {
-      console.error(`Error fetching URL ${url}:`, error);
-      return null;
+    } catch (proxyError) {
+      console.warn(`Proxy fetch failed for ${url}, trying direct fetch:`, proxyError);
+      
+      try {
+        // Fallback to direct fetch if proxy fails
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': getRandomUserAgent(),
+          },
+          mode: 'no-cors', // This allows the request to proceed even with CORS issues
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const text = await response.text();
+        return text;
+      } catch (directError) {
+        console.error(`Direct fetch also failed for ${url}:`, directError);
+        throw directError;
+      }
     }
   };
 
@@ -84,16 +103,19 @@ const URLAnalyzer = () => {
     try {
       for (const url of urlList) {
         try {
-          // URL'nin içeriğini al
+          console.log(`Fetching content for URL: ${url}`);
           const content = await fetchUrlContent(url);
+          
           if (!content) {
-            console.warn(`Skipping ${url} due to fetch error`);
+            console.warn(`No content received for ${url}`);
             continue;
           }
 
+          console.log(`Successfully fetched content for ${url}, length: ${content.length}`);
+
           const prompt = `Analyze this URL and its content for SEO purposes:
           URL: ${url}
-          Content: ${content.substring(0, 1500)} // İlk 1500 karakter
+          Content: ${content.substring(0, 1500)}
           
           Please provide:
           1. Main topics (2-3 key subjects)
@@ -123,7 +145,7 @@ const URLAnalyzer = () => {
               "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-              model: "gpt-4o-mini",
+              model: "gpt-4",
               messages: [
                 {
                   role: "system",
@@ -146,12 +168,10 @@ const URLAnalyzer = () => {
           let analysis;
           
           try {
-            // GPT yanıtını parse et
             const content = data.choices[0].message.content;
             analysis = JSON.parse(content.trim());
           } catch (parseError) {
             console.error("JSON parse error:", parseError);
-            // Hatalı JSON durumunda boş bir analiz objesi oluştur
             analysis = {
               main_topics: [],
               keywords: [],
@@ -174,7 +194,6 @@ const URLAnalyzer = () => {
           processedCount++;
           setProgress((processedCount / urlList.length) * 100);
 
-          // Her URL işleminden sonra kısa bir bekleme ekle
           await new Promise(resolve => setTimeout(resolve, 1000));
 
         } catch (error) {
@@ -187,7 +206,6 @@ const URLAnalyzer = () => {
         }
       }
 
-      // URL database'ini JSON dosyası olarak indir
       const blob = new Blob([JSON.stringify(urlDatabase, null, 2)], { type: "application/json" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
