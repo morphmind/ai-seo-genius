@@ -13,9 +13,14 @@ export const analyzeUrl = async (url: string, apiKey: string): Promise<any> => {
       headers: {
         'User-Agent': userAgent
       },
+      mode: 'no-cors', // Add no-cors mode
       // @ts-ignore
       rejectUnauthorized: false
     });
+
+    if (!response.ok && response.type !== 'opaque') {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
     const html = await response.text();
     
@@ -31,7 +36,7 @@ export const analyzeUrl = async (url: string, apiKey: string): Promise<any> => {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4",
         messages: [
           {
             role: "system",

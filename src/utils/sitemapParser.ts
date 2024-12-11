@@ -13,9 +13,14 @@ export const extractUrlsFromSitemap = async (sitemapUrl: string): Promise<string
       headers: {
         'User-Agent': 'PostmanRuntime/7.32.3',
       },
+      mode: 'no-cors', // Add no-cors mode
       // @ts-ignore
       rejectUnauthorized: false
     });
+    
+    if (!response.ok && response.type !== 'opaque') {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     
     const xmlText = await response.text();
     const parser = new XMLParser({
