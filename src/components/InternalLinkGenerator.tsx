@@ -7,13 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-
-declare global {
-  interface Window {
-    pyodide: any;
-    loadPyodide: () => Promise<any>;
-  }
-}
+import { ContentAnalyzer } from "@/utils/internal-linking/contentAnalyzer";
+import { ContentMatcher } from "@/utils/internal-linking/contentMatcher";
 
 const InternalLinkGenerator = () => {
   const [urlDatabase, setUrlDatabase] = useState<File | null>(null);
@@ -61,9 +56,9 @@ const InternalLinkGenerator = () => {
 
       // Python kodunu çalıştır
       await window.pyodide.loadPackagesFromImports(`
-        import os
-        from pathlib import Path
         import json
+        from pathlib import Path
+        import os
       `);
 
       // Geçici dosya sistemi oluştur
