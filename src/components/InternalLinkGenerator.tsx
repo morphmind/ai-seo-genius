@@ -6,6 +6,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 
+declare global {
+  interface Window {
+    pyodide: any;
+  }
+}
+
 const InternalLinkGenerator = () => {
   const [sitemapFile, setSitemapFile] = useState<File | null>(null);
   const [articleFiles, setArticleFiles] = useState<FileList | null>(null);
@@ -56,38 +62,64 @@ const InternalLinkGenerator = () => {
     setIsProcessing(true);
 
     try {
-      const formData = new FormData();
-      formData.append('sitemap', sitemapFile);
-      Array.from(articleFiles).forEach(file => {
-        formData.append('articles', file);
-      });
-
-      // API endpoint'i hazır olduğunda burası güncellenecek
-      const response = await fetch('/api/internal-linking', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('İşlem başarısız oldu');
+      // Pyodide'yi yükle
+      if (!window.pyodide) {
+        window.pyodide = await loadPyodide();
       }
 
-      const result = await response.json();
-      
+      // Dosyaları oku
+      const sitemapContent = await sitemapFile.text();
+      const articleContents = await Promise.all(
+        Array.from(articleFiles).map(file => file.text())
+      );
+
+      // Python kodunu çalıştır
+      await window.pyodide.loadPackagesFromImports(`
+        import os
+        from pathlib import Path
+      `);
+
+      // Geçici dosya sistemi oluştur
+      window.pyodide.runPython(`
+        os.makedirs("makaleler", exist_ok=True)
+        os.makedirs("report", exist_ok=True)
+        
+        with open("sitemap.txt", "w") as f:
+          f.write("""${sitemapContent}""")
+          
+        for i, content in enumerate(${JSON.stringify(articleContents)}):
+          with open(f"makaleler/article_{i}.txt", "w") as f:
+            f.write(content)
+      `);
+
+      // Ana Python kodunu çalıştır
+      const result = window.pyodide.runPython(`
+        from src.internal_linking_system import InternalLinkingSystem
+        from src.utils.api_key_manager import ApiKeyManager
+        
+        api_key_manager = ApiKeyManager()
+        system = InternalLinkingSystem(
+          sitemap_path="sitemap.txt",
+          articles_dir="makaleler",
+          api_key_manager=api_key_manager
+        )
+        
+        system.initialize_api_key()
+        system.run()
+        
+        "İşlem tamamlandı!"
+      `);
+
       toast({
         title: "Başarılı",
-        description: "İç linkleme işlemi tamamlandı",
+        description: result,
       });
 
-      // Sonuçları göster veya indirme bağlantısı sağla
-      if (result.downloadUrl) {
-        window.open(result.downloadUrl, '_blank');
-      }
-
     } catch (error) {
+      console.error('Python kodu çalıştırma hatası:', error);
       toast({
         title: "Hata",
-        description: "İşlem sırasında bir hata oluştu",
+        description: "İşlem sırasında bir hata oluştu: " + String(error),
         variant: "destructive",
       });
     } finally {
