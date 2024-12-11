@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Provider, Model } from "@/types/content";
+import { Button } from "@/components/ui/button";
 import ModelSelector from "./ModelSelector";
+import TitleInput from "./prompt-generator/TitleInput";
+import PromptOutput from "./prompt-generator/PromptOutput";
 
 const ImagePromptGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
@@ -55,7 +55,6 @@ Respond with a single short paragraph.`;
 
     setLoading(true);
     try {
-      // Generate both prompts
       const responses = await Promise.all([
         fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
@@ -119,83 +118,45 @@ Respond with a single short paragraph.`;
 
   return (
     <div className="space-y-6">
-      <ModelSelector 
-        provider={provider}
-        model={model}
-        onProviderChange={setProvider}
-        onModelChange={setModel}
-      />
-
-      <div className="space-y-2">
-        <Input
-          placeholder="Enter your article title"
-          value={inputTitle}
-          onChange={(e) => setInputTitle(e.target.value)}
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+        <ModelSelector 
+          provider={provider}
+          model={model}
+          onProviderChange={setProvider}
+          onModelChange={setModel}
         />
-        <Button 
-          className="w-full"
-          onClick={handleGenerate}
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            "Generate Visual Prompt"
-          )}
-        </Button>
       </div>
 
-      {prompt && (
-        <>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <h3 className="font-medium">With Title</h3>
-                <div className="relative">
-                  <textarea
-                    className="w-full min-h-[150px] p-3 rounded-md border"
-                    value={prompt}
-                    readOnly
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => handleCopy(prompt)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <TitleInput value={inputTitle} onChange={setInputTitle} />
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <h3 className="font-medium">Without Title</h3>
-                <div className="relative">
-                  <textarea
-                    className="w-full min-h-[150px] p-3 rounded-md border"
-                    value={promptWithoutTitle}
-                    readOnly
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => handleCopy(promptWithoutTitle)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </>
+      <Button 
+        className="w-full"
+        onClick={handleGenerate}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          "Generate Visual Prompt"
+        )}
+      </Button>
+
+      {prompt && (
+        <div className="space-y-6">
+          <PromptOutput
+            title="With Title"
+            content={prompt}
+            onCopy={handleCopy}
+          />
+          <PromptOutput
+            title="Without Title"
+            content={promptWithoutTitle}
+            onCopy={handleCopy}
+          />
+        </div>
       )}
     </div>
   );
