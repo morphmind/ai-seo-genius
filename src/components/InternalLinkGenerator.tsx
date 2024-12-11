@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
 import { ContentAnalyzer } from "@/utils/internal-linking/contentAnalyzer";
 import { ContentMatcher } from "@/utils/internal-linking/contentMatcher";
+import FileUploader from "./internal-linking/FileUploader";
+import LinkingMethodSelector from "./internal-linking/LinkingMethodSelector";
+import ArticleInput from "./internal-linking/ArticleInput";
+import ProcessButton from "./internal-linking/ProcessButton";
 
 const InternalLinkGenerator = () => {
   const [urlDatabase, setUrlDatabase] = useState<File | null>(null);
@@ -17,21 +15,6 @@ const InternalLinkGenerator = () => {
   const [linkingMethod, setLinkingMethod] = useState<"manual" | "auto">("manual");
   const [manualLinkCount, setManualLinkCount] = useState("3");
   const { toast } = useToast();
-
-  const handleUrlDatabaseUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.name.endsWith('.json')) {
-        setUrlDatabase(file);
-      } else {
-        toast({
-          title: "Hata",
-          description: "Lütfen .json formatında bir URL database dosyası yükleyin",
-          variant: "destructive",
-        });
-      }
-    }
-  };
 
   const processContent = async () => {
     if (!urlDatabase || !articleContent.trim()) {
@@ -116,81 +99,27 @@ const InternalLinkGenerator = () => {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="urlDatabase">URL Database (.json)</Label>
-              <Input
-                id="urlDatabase"
-                type="file"
-                accept=".json"
-                onChange={handleUrlDatabaseUpload}
-                className="cursor-pointer"
-              />
-              {urlDatabase && (
-                <p className="text-sm text-muted-foreground">
-                  Yüklenen dosya: {urlDatabase.name}
-                </p>
-              )}
-            </div>
+            <FileUploader 
+              onFileUpload={setUrlDatabase}
+              urlDatabase={urlDatabase}
+            />
 
-            <div className="space-y-2">
-              <Label>Link Sayısı Belirleme Yöntemi</Label>
-              <RadioGroup
-                value={linkingMethod}
-                onValueChange={(value: "manual" | "auto") => setLinkingMethod(value)}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="manual" id="manual" />
-                  <Label htmlFor="manual">Manuel Sayı</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="auto" id="auto" />
-                  <Label htmlFor="auto">Otomatik (500 kelimede 1)</Label>
-                </div>
-              </RadioGroup>
-            </div>
+            <LinkingMethodSelector
+              linkingMethod={linkingMethod}
+              manualLinkCount={manualLinkCount}
+              onMethodChange={setLinkingMethod}
+              onCountChange={setManualLinkCount}
+            />
 
-            {linkingMethod === "manual" && (
-              <div className="space-y-2">
-                <Label htmlFor="linkCount">Link Sayısı</Label>
-                <Input
-                  id="linkCount"
-                  type="number"
-                  min="1"
-                  value={manualLinkCount}
-                  onChange={(e) => setManualLinkCount(e.target.value)}
-                />
-              </div>
-            )}
+            <ArticleInput
+              value={articleContent}
+              onChange={setArticleContent}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="article">Makale İçeriği</Label>
-              <Textarea
-                id="article"
-                placeholder="Makale içeriğini buraya girin"
-                value={articleContent}
-                onChange={(e) => setArticleContent(e.target.value)}
-                className="min-h-[200px]"
-              />
-            </div>
-
-            <Button
-              className="w-full"
+            <ProcessButton
               onClick={processContent}
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  İşleniyor...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  İç Linkleme İşlemini Başlat
-                </>
-              )}
-            </Button>
+              isProcessing={isProcessing}
+            />
           </div>
         </CardContent>
       </Card>
