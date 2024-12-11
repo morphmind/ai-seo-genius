@@ -25,7 +25,7 @@ Guidelines:
 - Include key visual elements and colors
 - No copyrighted elements
 - Keep the description focused and brief
-${includeTitle ? "" : "- Do not include any text or title in the illustration"}
+${includeTitle ? `- The title "${title}" should be prominently displayed at the top or bottom of the illustration` : "- Do not include any text or title in the illustration"}
 
 Respond with a single short paragraph.`;
   };
