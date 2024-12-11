@@ -8,7 +8,7 @@ import { GeneratedContent, Provider, Model } from "@/types/content";
 import { generateSEOPrompt, generateFAQPrompt, parseAIResponse } from "@/utils/prompts";
 import ModelSelector from "./ModelSelector";
 import ContentDisplay from "./ContentDisplay";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 
 const ContentGenerator = () => {
@@ -48,7 +48,7 @@ const ContentGenerator = () => {
     setLoading(true);
     try {
       const seoPrompt = generateSEOPrompt(inputTitle, inputLanguage, outputLanguage);
-      const faqPrompt = includeFAQ ? generateFAQPrompt(inputTitle, inputLanguage, outputLanguage) : null;
+      const faqPrompt = includeFAQ ? generateFAQPrompt(inputTitle, inputLanguage, outputLanguage, "text") : null;
       
       const prompts = [
         {
@@ -118,64 +118,76 @@ const ContentGenerator = () => {
           onModelChange={setModel}
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Giriş Dili</Label>
-            <Select value={inputLanguage} onValueChange={(value: "tr" | "en") => setInputLanguage(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tr">Türkçe</SelectItem>
-                <SelectItem value="en">İngilizce</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <div className="flex flex-col space-y-4">
+            <div className="space-y-2">
+              <Label>Giriş Dili</Label>
+              <RadioGroup
+                value={inputLanguage}
+                onValueChange={(value: "tr" | "en") => setInputLanguage(value)}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="tr" id="input-tr" />
+                  <Label htmlFor="input-tr">Türkçe</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="en" id="input-en" />
+                  <Label htmlFor="input-en">İngilizce</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Çıkış Dili</Label>
+              <RadioGroup
+                value={outputLanguage}
+                onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="tr" id="output-tr" />
+                  <Label htmlFor="output-tr">Türkçe</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="en" id="output-en" />
+                  <Label htmlFor="output-en">İngilizce</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="faq-mode"
+              checked={includeFAQ}
+              onCheckedChange={setIncludeFAQ}
+            />
+            <Label htmlFor="faq-mode">FAQ Ekle</Label>
           </div>
 
           <div className="space-y-2">
-            <Label>Çıkış Dili</Label>
-            <Select value={outputLanguage} onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tr">Türkçe</SelectItem>
-                <SelectItem value="en">İngilizce</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Makale Başlığı</Label>
+            <Input
+              placeholder={`Başlığı ${inputLanguage === "tr" ? "Türkçe" : "İngilizce"} girin`}
+              value={inputTitle}
+              onChange={(e) => setInputTitle(e.target.value)}
+            />
+            <Button 
+              className="w-full"
+              onClick={handleGenerate}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Oluşturuluyor...
+                </>
+              ) : (
+                "İçerik Oluştur"
+              )}
+            </Button>
           </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="faq-mode"
-            checked={includeFAQ}
-            onCheckedChange={setIncludeFAQ}
-          />
-          <Label htmlFor="faq-mode">FAQ Ekle</Label>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Makale Başlığı</Label>
-          <Input
-            placeholder={`Başlığı ${inputLanguage === "tr" ? "Türkçe" : "İngilizce"} girin`}
-            value={inputTitle}
-            onChange={(e) => setInputTitle(e.target.value)}
-          />
-          <Button 
-            className="w-full"
-            onClick={handleGenerate}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Oluşturuluyor...
-              </>
-            ) : (
-              "İçerik Oluştur"
-            )}
-          </Button>
         </div>
       </div>
 
