@@ -25,6 +25,16 @@ const ContentDisplay = ({ content, includeFAQ }: ContentDisplayProps) => {
     });
   };
 
+  const copyAllFAQs = () => {
+    if (!content.faq) return;
+    
+    const allFAQs = content.faq.questions.map((item) => (
+      `Soru: ${item.question}\nCevap: ${item.answer}\n\n`
+    )).join('');
+    
+    copyToClipboard(allFAQs.trim());
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-4">
@@ -100,6 +110,17 @@ const ContentDisplay = ({ content, includeFAQ }: ContentDisplayProps) => {
             <TabsContent value="text">
               <Card>
                 <CardContent className="pt-6">
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={copyAllFAQs}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Hepsini Kopyala
+                    </Button>
+                  </div>
                   <Accordion type="single" collapsible className="w-full">
                     {content.faq.questions.map((item, index) => (
                       <AccordionItem key={index} value={`item-${index}`}>
