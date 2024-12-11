@@ -62,10 +62,28 @@ Yanıtı şu JSON formatında ver:
 Sadece JSON formatında yanıt ver, başka bir şey ekleme.`;
 };
 
-export const parseAIResponse = (responseText: string): any => {
+export const parseAIResponse = (responseText: string, includeFAQ: boolean = false): any => {
   try {
     const jsonString = responseText.replace(/```json\n?|\n?```/g, '').trim();
-    return JSON.parse(jsonString);
+    const parsedData = JSON.parse(jsonString);
+    
+    // Ensure FAQ schema is properly formatted
+    if (includeFAQ && parsedData.faq) {
+      parsedData.faq.schema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": parsedData.faq.questions.map((q: any) => ({
+          "@type": "Question",
+          "name": q.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": q.answer
+          }
+        }))
+      };
+    }
+    
+    return parsedData;
   } catch (error) {
     console.error("JSON parsing error:", error);
     console.log("Raw response:", responseText);

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { GeneratedContent, Provider, Model, ContentType } from "@/types/content";
+import { GeneratedContent, Provider, Model } from "@/types/content";
 import { generateSEOPrompt, generateFAQPrompt, parseAIResponse } from "@/utils/prompts";
 import ModelSelector from "./ModelSelector";
 import ContentDisplay from "./ContentDisplay";
@@ -19,7 +19,6 @@ const ContentGenerator = () => {
   const [model, setModel] = useState<Model>("gpt-4o-mini");
   const [inputLanguage, setInputLanguage] = useState<"tr" | "en">("tr");
   const [outputLanguage, setOutputLanguage] = useState<"tr" | "en">("tr");
-  const [contentType, setContentType] = useState<ContentType>("seo");
   const [includeFAQ, setIncludeFAQ] = useState(false);
   const { toast } = useToast();
 
@@ -89,7 +88,7 @@ const ContentGenerator = () => {
         }
 
         const data = await response.json();
-        const generatedContent = parseAIResponse(data.choices[0].message.content);
+        const generatedContent = parseAIResponse(data.choices[0].message.content, includeFAQ);
         setContent(generatedContent);
       } else {
         toast({
@@ -119,19 +118,7 @@ const ContentGenerator = () => {
           onModelChange={setModel}
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>İçerik Türü</Label>
-            <Select value={contentType} onValueChange={(value: ContentType) => setContentType(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="İçerik türü seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="seo">Makale Ögeleri</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Giriş Dili</Label>
             <Select value={inputLanguage} onValueChange={(value: "tr" | "en") => setInputLanguage(value)}>
