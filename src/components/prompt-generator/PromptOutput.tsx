@@ -22,20 +22,15 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
   const { toast } = useToast();
 
   const validateApiKey = (key: string): string | null => {
-    // Remove any whitespace
+    // Remove any whitespace and trim
     const trimmedKey = key.trim();
     
-    // If it already starts with Bearer, remove it for validation
-    const tokenPart = trimmedKey.startsWith('Bearer ') 
-      ? trimmedKey.substring(7) 
-      : trimmedKey;
-    
-    // Check if it's a valid JWT format (should have 2 dots making 3 parts)
-    if (!tokenPart.includes('.') || tokenPart.split('.').length !== 3) {
-      return null;
+    // If the key is already in a valid format, return it with Bearer prefix
+    if (trimmedKey.length > 10) {
+      return `Bearer ${trimmedKey}`;
     }
     
-    return `Bearer ${tokenPart}`;
+    return null;
   };
 
   const generateImages = async () => {
