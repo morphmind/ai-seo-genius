@@ -7,6 +7,7 @@ interface ProcessedLink {
   anchorText: string;
   position: string;
   similarityScore: number;
+  paragraph: string;
 }
 
 interface LinkReportProps {
@@ -29,6 +30,7 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
                   <TableHead>Anchor Text</TableHead>
                   <TableHead>Pozisyon</TableHead>
                   <TableHead>Benzerlik Skoru</TableHead>
+                  <TableHead>Eklendiği Paragraf</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -42,6 +44,9 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
                     <TableCell>{link.anchorText}</TableCell>
                     <TableCell>Paragraf {link.position.split('_')[1]}</TableCell>
                     <TableCell>{(link.similarityScore * 100).toFixed(1)}%</TableCell>
+                    <TableCell className="max-w-[300px] truncate">
+                      {link.paragraph}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -51,7 +56,7 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
           <div className="mt-4">
             <h4 className="text-md font-semibold mb-2">İşlenmiş İçerik Önizleme</h4>
             <div 
-              className="p-4 rounded-md border bg-gray-50 max-h-[300px] overflow-auto"
+              className="p-4 rounded-md border bg-muted max-h-[300px] overflow-auto"
               dangerouslySetInnerHTML={{ __html: content }}
             />
           </div>
