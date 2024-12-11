@@ -24,7 +24,7 @@ export class ContentMatcher {
     maxLinks: number = 5
   ): Array<URLData & { similarity: number }> {
     console.log("Article Analysis:", JSON.stringify(articleAnalysis, null, 2));
-    console.log("Available URLs:", JSON.stringify(availableUrls, null, 2));
+    console.log("Available URLs sample:", availableUrls.slice(0, 2));
 
     if (!articleAnalysis || !availableUrls?.length) {
       console.log("No article analysis or URLs available");
@@ -39,7 +39,13 @@ export class ContentMatcher {
     console.log("Article Keywords:", articleKeywords);
 
     const scoredUrls = availableUrls
-      .filter(urlData => urlData && urlData.analysis) // Sadece geçerli URL'leri filtrele
+      .filter(urlData => {
+        const isValid = urlData && urlData.analysis && urlData.url;
+        if (!isValid) {
+          console.log("Invalid URL data entry:", urlData);
+        }
+        return isValid;
+      })
       .map(urlData => {
         const urlKeywords = [
           ...(urlData.analysis?.ana_konular || []),
@@ -63,10 +69,10 @@ export class ContentMatcher {
         return { ...urlData, similarity };
       });
 
-    // Benzerlik eşiği 0.01'e düşürüldü ve daha detaylı loglama eklendi
+    // Benzerlik eşiği 0.001'e düşürüldü
     const filteredUrls = scoredUrls
       .filter(url => {
-        const passes = url.similarity > 0.01;
+        const passes = url.similarity > 0.001;
         console.log(`URL ${url.url} ${passes ? 'passed' : 'failed'} similarity threshold:`, url.similarity);
         return passes;
       })
