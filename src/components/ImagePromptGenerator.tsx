@@ -16,27 +16,28 @@ const ImagePromptGenerator = () => {
   const { toast } = useToast();
 
   const generatePromptTemplate = (title: string) => {
-    return `You are an expert at creating detailed image prompts for blog post featured images. 
-    
-Title: "${title}"
+    return `Sen blog yazıları için görsel prompt oluşturmada uzman bir asistansın. Aşağıdaki başlık için detaylı bir görsel prompt oluştur:
 
-Create a detailed, specific image prompt for an illustration that will be used as the featured image for this blog post.
-The image should:
-- Be an illustration style (not realistic or photographic)
-- Be clean and not too complex
-- Clearly represent the topic and meaning of the title
-- Include specific details about elements, colors, composition, and mood
-- Be creative and engaging while staying relevant to the topic
-- Not use any copyrighted characters or elements
+Başlık: "${title}"
 
-Format your response as a single, detailed paragraph describing exactly what should be in the illustration.`;
+Bu başlık için:
+- İllüstrasyon tarzında (gerçekçi veya fotoğrafik değil)
+- Sade ve çok karmaşık olmayan
+- Başlığın konusunu ve anlamını net bir şekilde temsil eden
+- Renk, kompozisyon ve atmosfer detaylarını içeren
+- Konuyla alakalı yaratıcı ve ilgi çekici
+- Telif hakkı olan karakterler veya öğeler içermeyen
+
+bir görsel için prompt oluştur.
+
+Yanıtını tek bir detaylı paragraf olarak, görselde tam olarak ne olması gerektiğini betimleyerek ver.`;
   };
 
   const handleGenerate = async () => {
     if (!inputTitle.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter an article title",
+        title: "Hata",
+        description: "Lütfen bir başlık girin",
         variant: "destructive",
       });
       return;
@@ -48,8 +49,8 @@ Format your response as a single, detailed paragraph describing exactly what sho
 
     if (!apiKey) {
       toast({
-        title: "Error",
-        description: `Please set your ${provider === "openai" ? "OpenAI" : "Anthropic"} API key in settings`,
+        title: "Hata",
+        description: `Lütfen ${provider === "openai" ? "OpenAI" : "Anthropic"} API anahtarınızı ayarlarda belirleyin`,
         variant: "destructive",
       });
       return;
@@ -58,25 +59,39 @@ Format your response as a single, detailed paragraph describing exactly what sho
     setLoading(true);
     try {
       const promptTemplate = generatePromptTemplate(inputTitle);
-      console.log("Sending to GPT:", promptTemplate);
+      console.log("GPT'ye gönderiliyor:", promptTemplate);
       
-      // Here we would make the actual API call to GPT
-      // For demonstration, we'll simulate a more contextual response
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // This is a mock response - in production, this would come from the API
-      let mockResponse = "";
-      if (inputTitle.toLowerCase().includes("ingilizce") && inputTitle.toLowerCase().includes("çizgi film")) {
-        mockResponse = `A playful and inviting illustration highlighting cartoons as a fun way to learn English. The design features a TV screen with colorful cartoon characters (generic and not copyrighted) speaking in speech bubbles that include simple English words or phrases like 'Hello!' or 'How are you?'. Surround the TV with books, headphones, and a globe to emphasize learning and global communication. Use bright, cheerful colors like yellow, red, and blue to create a lively and engaging atmosphere.`;
-      } else {
-        mockResponse = `An engaging illustration related to "${inputTitle}" that captures the essence of the topic through carefully chosen visual elements. The design should incorporate relevant symbols and metaphors, using a cohesive color palette that matches the topic's mood. Include specific details that relate to the subject matter while maintaining a clean, uncluttered composition.`;
+      // OpenAI API çağrısı yapılacak
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "user",
+              content: promptTemplate
+            }
+          ],
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("API yanıtı başarısız");
       }
+
+      const data = await response.json();
+      const generatedPrompt = data.choices[0].message.content;
+      setPrompt(generatedPrompt);
       
-      setPrompt(mockResponse);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to generate prompt. Please try again.",
+        title: "Hata",
+        description: "Prompt oluşturulamadı. Lütfen tekrar deneyin.",
         variant: "destructive",
       });
     } finally {
@@ -87,8 +102,8 @@ Format your response as a single, detailed paragraph describing exactly what sho
   const handleCopy = () => {
     navigator.clipboard.writeText(prompt);
     toast({
-      title: "Success",
-      description: "Prompt copied to clipboard",
+      title: "Başarılı",
+      description: "Prompt panoya kopyalandı",
     });
   };
 
@@ -103,7 +118,7 @@ Format your response as a single, detailed paragraph describing exactly what sho
 
       <div className="space-y-2">
         <Input
-          placeholder="Enter your article title"
+          placeholder="Makale başlığınızı girin"
           value={inputTitle}
           onChange={(e) => setInputTitle(e.target.value)}
         />
@@ -115,10 +130,10 @@ Format your response as a single, detailed paragraph describing exactly what sho
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
+              Oluşturuluyor...
             </>
           ) : (
-            "Generate Image Prompt"
+            "Görsel Promptu Oluştur"
           )}
         </Button>
       </div>
