@@ -39,9 +39,9 @@ export class ContentMatcher {
       return { ...urlData, similarity };
     });
 
-    // Sort by similarity and return top matches
+    // Benzerlik eşiğini 0.15'ten 0.05'e düşürdük
     return scoredUrls
-      .filter(url => url.similarity > 0.15)
+      .filter(url => url.similarity > 0.05)
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, maxLinks);
   }
