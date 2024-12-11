@@ -6,19 +6,22 @@ const USER_AGENTS = [
 
 export const analyzeUrl = async (url: string, apiKey: string): Promise<any> => {
   try {
+    console.log('Analyzing URL:', url);
+    
     // Rotate through user agents
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
     
-    const response = await fetch(url, {
+    // Try to fetch through proxy to avoid CORS
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    console.log('Fetching through proxy:', proxyUrl);
+    
+    const response = await fetch(proxyUrl, {
       headers: {
         'User-Agent': userAgent
-      },
-      mode: 'no-cors', // Add no-cors mode
-      // @ts-ignore
-      rejectUnauthorized: false
+      }
     });
 
-    if (!response.ok && response.type !== 'opaque') {
+    if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -27,6 +30,8 @@ export const analyzeUrl = async (url: string, apiKey: string): Promise<any> => {
     // Extract basic metadata
     const title = html.match(/<title>(.*?)<\/title>/i)?.[1] || '';
     const description = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i)?.[1] || '';
+    
+    console.log('Extracted metadata:', { title, description });
     
     // Send to OpenAI for analysis
     const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {

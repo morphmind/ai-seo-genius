@@ -9,47 +9,65 @@ export interface SitemapURL {
 
 export const extractUrlsFromSitemap = async (sitemapUrl: string): Promise<string[]> => {
   try {
+    console.log('Fetching sitemap:', sitemapUrl);
+    
     const response = await fetch(sitemapUrl, {
       headers: {
         'User-Agent': 'PostmanRuntime/7.32.3',
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive'
       },
-      mode: 'no-cors', // Add no-cors mode
+      mode: 'no-cors',
       // @ts-ignore
       rejectUnauthorized: false
     });
     
-    if (!response.ok && response.type !== 'opaque') {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    console.log('Response type:', response.type);
+    console.log('Response status:', response.status);
     
-    const xmlText = await response.text();
-    const parser = new XMLParser({
-      ignoreAttributes: false,
-      attributeNamePrefix: ''
-    });
-    
-    const parsed = parser.parse(xmlText);
-    
-    // Handle both urlset (standard sitemap) and sitemapindex (sitemap index)
-    if (parsed.urlset?.url) {
-      const urls = Array.isArray(parsed.urlset.url) ? parsed.urlset.url : [parsed.urlset.url];
-      return urls.map((url: SitemapURL) => url.loc);
-    } else if (parsed.sitemapindex?.sitemap) {
-      const sitemaps = Array.isArray(parsed.sitemapindex.sitemap) 
-        ? parsed.sitemapindex.sitemap 
-        : [parsed.sitemapindex.sitemap];
+    // For opaque responses (no-cors mode), we need to handle them differently
+    if (response.type === 'opaque') {
+      // Try alternative fetch with proxy or different settings
+      const proxyResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(sitemapUrl)}`, {
+        headers: {
+          'User-Agent': 'PostmanRuntime/7.32.3'
+        }
+      });
       
-      // Recursively fetch URLs from all sitemaps
-      const nestedUrls = await Promise.all(
-        sitemaps.map((sitemap: { loc: string }) => extractUrlsFromSitemap(sitemap.loc))
-      );
+      if (!proxyResponse.ok) {
+        throw new Error(`Proxy fetch failed with status: ${proxyResponse.status}`);
+      }
       
-      return nestedUrls.flat();
+      const xmlText = await proxyResponse.text();
+      const parser = new XMLParser({
+        ignoreAttributes: false,
+        attributeNamePrefix: ''
+      });
+      
+      const parsed = parser.parse(xmlText);
+      
+      // Handle both urlset (standard sitemap) and sitemapindex (sitemap index)
+      if (parsed.urlset?.url) {
+        const urls = Array.isArray(parsed.urlset.url) ? parsed.urlset.url : [parsed.urlset.url];
+        return urls.map((url: SitemapURL) => url.loc);
+      } else if (parsed.sitemapindex?.sitemap) {
+        const sitemaps = Array.isArray(parsed.sitemapindex.sitemap) 
+          ? parsed.sitemapindex.sitemap 
+          : [parsed.sitemapindex.sitemap];
+        
+        // Recursively fetch URLs from all sitemaps
+        const nestedUrls = await Promise.all(
+          sitemaps.map((sitemap: { loc: string }) => extractUrlsFromSitemap(sitemap.loc))
+        );
+        
+        return nestedUrls.flat();
+      }
     }
     
     return [];
   } catch (error) {
     console.error('Sitemap parsing error:', error);
-    throw new Error('Sitemap ayrıştırma hatası');
+    throw new Error(`Sitemap ayrıştırma hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
   }
 };
