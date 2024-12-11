@@ -4,11 +4,14 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 
 const URLAnalyzer: React.FC = () => {
   const [urls, setUrls] = useState("");
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
+  const [progress, setProgress] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState<string>("");
   const { toast } = useToast();
 
   const downloadResults = () => {
@@ -25,6 +28,21 @@ const URLAnalyzer: React.FC = () => {
     document.body.removeChild(a);
   };
 
+  const calculateTimeRemaining = (current: number, total: number, elapsedTime: number) => {
+    if (current === 0) return "Hesaplanıyor...";
+    const timePerUrl = elapsedTime / current;
+    const remainingUrls = total - current;
+    const remainingSeconds = Math.round(timePerUrl * remainingUrls / 1000);
+    
+    if (remainingSeconds < 60) {
+      return `${remainingSeconds} saniye`;
+    } else {
+      const minutes = Math.floor(remainingSeconds / 60);
+      const seconds = remainingSeconds % 60;
+      return `${minutes} dakika ${seconds} saniye`;
+    }
+  };
+
   const analyzeUrls = async () => {
     if (!urls.trim()) {
       toast({
@@ -36,6 +54,8 @@ const URLAnalyzer: React.FC = () => {
     }
 
     setLoading(true);
+    setProgress(0);
+    const startTime = Date.now();
     const urlList = urls.split("\n").filter(url => url.trim());
     const results: { [key: string]: any } = {};
 
@@ -50,7 +70,8 @@ const URLAnalyzer: React.FC = () => {
         return;
       }
 
-      for (const url of urlList) {
+      for (let i = 0; i < urlList.length; i++) {
+        const url = urlList[i];
         try {
           const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
@@ -98,6 +119,13 @@ const URLAnalyzer: React.FC = () => {
             analyzed_at: new Date().toISOString()
           };
 
+          // Progress ve kalan süre hesaplama
+          const currentProgress = ((i + 1) / urlList.length) * 100;
+          setProgress(currentProgress);
+          const elapsedTime = Date.now() - startTime;
+          const remaining = calculateTimeRemaining(i + 1, urlList.length, elapsedTime);
+          setTimeRemaining(remaining);
+
           // Her başarılı analiz sonrası state'i güncelle
           setAnalysis(results);
         } catch (error) {
@@ -127,6 +155,8 @@ const URLAnalyzer: React.FC = () => {
       });
     } finally {
       setLoading(false);
+      setProgress(0);
+      setTimeRemaining("");
     }
   };
 
@@ -166,6 +196,15 @@ const URLAnalyzer: React.FC = () => {
             </Button>
           )}
         </div>
+
+        {loading && (
+          <div className="space-y-2">
+            <Progress value={progress} className="w-full" />
+            <p className="text-sm text-muted-foreground text-center">
+              İşleniyor... ({Math.round(progress)}%) - Tahmini kalan süre: {timeRemaining}
+            </p>
+          </div>
+        )}
       </div>
 
       {analysis && (
