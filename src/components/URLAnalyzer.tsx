@@ -152,19 +152,19 @@ const URLAnalyzer = () => {
                 continue;
               }
 
-              const prompt = `Analyze this URL and its content for SEO purposes:
+              const prompt = `Bu URL'yi ve içeriğini SEO açısından analiz et:
               URL: ${pageUrl}
-              Content: ${pageContent.substring(0, 1500)}
+              İçerik: ${pageContent.substring(0, 1500)}
               
-              Please provide:
-              1. Main topics (2-3 key subjects)
-              2. Important keywords (8-10 relevant terms)
-              3. Brief context description
-              4. Potential anchor texts (2-3 variations)
-              5. Content depth analysis (level and key concepts)
-              6. Whether it's a blog post or not
+              Lütfen aşağıdakileri sağla:
+              1. Ana konular (2-3 temel konu)
+              2. Önemli anahtar kelimeler (8-10 ilgili terim)
+              3. Kısa içerik açıklaması
+              4. Potansiyel bağlantı metinleri (2-3 varyasyon)
+              5. İçerik derinliği analizi (seviye ve temel kavramlar)
+              6. Blog yazısı olup olmadığı
               
-              Return ONLY a valid JSON object with these fields (no markdown, no backticks):
+              SADECE aşağıdaki alanlara sahip geçerli bir JSON nesnesi döndür (markdown veya backtick kullanma):
               {
                 "main_topics": [],
                 "keywords": [],
@@ -188,7 +188,7 @@ const URLAnalyzer = () => {
                   messages: [
                     {
                       role: "system",
-                      content: "You are an SEO expert. Return ONLY valid JSON without any markdown formatting or backticks."
+                      content: "Sen bir SEO uzmanısın. Yanıtları sadece Türkçe olarak ver ve SADECE geçerli JSON formatında, markdown veya backtick kullanmadan döndür."
                     },
                     {
                       role: "user",
@@ -216,10 +216,10 @@ const URLAnalyzer = () => {
                 analysis = {
                   main_topics: [],
                   keywords: [],
-                  context: "Error analyzing content",
+                  context: "İçerik analizinde hata",
                   potential_anchor_texts: [],
                   content_depth: {
-                    level: "unknown",
+                    level: "bilinmiyor",
                     key_concepts: []
                   },
                   is_blog_post: false
