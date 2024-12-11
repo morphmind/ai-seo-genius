@@ -36,7 +36,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
     try {
       console.log("Making request to Recraft.ai API");
       
-      const response = await fetch("https://api.recraft.ai/v1/generations", {
+      const response = await fetch("https://external.api.recraft.ai/v1/images/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,8 +44,9 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
         },
         body: JSON.stringify({
           prompt: content,
-          aspect_ratio: "2:1",
-          num_images: 2
+          n: 2,
+          size: "1024x1024",
+          style: "digital_illustration"
         })
       });
 
@@ -56,7 +57,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
       }
 
       const data = await response.json();
-      setImages(data.images || []);
+      setImages(data.data || []);
     } catch (error) {
       console.error("Generation error:", error);
       toast({
