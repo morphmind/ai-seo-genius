@@ -33,7 +33,7 @@ const Index = () => {
               )}
             </Button>
             <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
-              <SettingsIcon className="h-5 w-5" />
+              <SettingsIcon className="h-5 w-4" />
             </Button>
           </div>
         </div>
