@@ -35,7 +35,7 @@ const ContentDisplay = ({ content }: ContentDisplayProps) => {
           <div className="space-y-2">
             <Label>Meta Description ({content.metaDescription.length}/155 characters)</Label>
             <textarea
-              className="w-full min-h-[100px] p-3 rounded-md border"
+              className="w-full min-h-[100px] p-3 rounded-md border bg-background text-foreground"
               value={content.metaDescription}
               readOnly
             />
