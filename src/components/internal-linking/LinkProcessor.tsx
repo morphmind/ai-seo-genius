@@ -25,22 +25,23 @@ export const useContentProcessor = () => {
   const insertLinks = (content: string, links: ProcessedLink[]): string => {
     let processedContent = content;
     const paragraphs = processedContent.split('\n\n').filter(p => p.trim());
+    const updatedParagraphs = [...paragraphs];
     
     links.forEach(link => {
       const position = parseInt(link.position.split('_')[1]);
       if (position < paragraphs.length) {
+        const paragraph = paragraphs[position];
         const linkHtml = `<a href="${link.url}" class="internal-link" style="color: var(--primary); text-decoration: underline;">${link.anchorText}</a>`;
         
-        // İlgili paragrafta anahtar kelimeyi bul ve linkle değiştir
-        const paragraph = paragraphs[position];
-        const regex = new RegExp(`\\b${link.anchorText}\\b`, 'i');
+        // Anahtar kelimeyi bul ve linkle değiştir (büyük/küçük harf duyarlı olmadan)
+        const regex = new RegExp(`(${link.anchorText})`, 'gi');
         if (regex.test(paragraph)) {
-          paragraphs[position] = paragraph.replace(regex, linkHtml);
+          updatedParagraphs[position] = paragraph.replace(regex, linkHtml);
         }
       }
     });
 
-    return paragraphs.join('\n\n');
+    return updatedParagraphs.join('\n\n');
   };
 
   const processContent = async ({
@@ -72,42 +73,52 @@ export const useContentProcessor = () => {
       }
 
       onProgress(10);
-      const contentAnalyzer = new ContentAnalyzer(apiKey);
-      const contentMatcher = new ContentMatcher();
+      console.log("İşlem başladı: URL database ve içerik okunuyor");
 
       // URL database'ini oku
       const databaseContent = await urlDatabase.text();
       const urlData = JSON.parse(databaseContent);
-      onProgress(30);
+      onProgress(20);
+      console.log("URL database okundu:", urlData.length, "URL bulundu");
 
       // Makale içeriğini analiz et
       const paragraphs = articleContent.split('\n\n').filter(p => p.trim());
+      onProgress(30);
+      console.log("Makale", paragraphs.length, "paragrafa ayrıldı");
+
+      const contentAnalyzer = new ContentAnalyzer(apiKey);
+      const contentMatcher = new ContentMatcher();
+      
+      // İçerik analizi
+      onProgress(40);
+      console.log("İçerik analizi başladı");
+      const analysis = await contentAnalyzer.analyzeContent(articleContent);
       onProgress(50);
+      console.log("İçerik analizi tamamlandı:", analysis);
+
+      // Link sayısını belirle
+      const maxLinks = linkingMethod === "manual" 
+        ? parseInt(manualLinkCount) 
+        : Math.max(1, Math.floor(articleContent.length / 500));
+      console.log("Eklenecek maksimum link sayısı:", maxLinks);
       
       // İlgili içerikleri bul
-      const maxLinks = linkingMethod === "manual" ? parseInt(manualLinkCount) : Math.floor(articleContent.length / 500);
-      
       const relevantContent = contentMatcher.findRelevantContent(
-        {
-          main_topics: [],
-          keywords: [],
-          context: articleContent,
-          content_type: "article",
-          key_concepts: [],
-          secondary_topics: []
-        },
+        analysis,
         urlData,
         maxLinks
       );
       onProgress(70);
+      console.log("İlgili içerikler bulundu:", relevantContent.length);
 
       // Link önerileri oluştur
       const processedUrls = await contentAnalyzer.extractUrlsWithKeywords(relevantContent);
       onProgress(80);
+      console.log("Link önerileri oluşturuldu:", processedUrls);
       
       // Link pozisyonlarını hesapla
       const links: ProcessedLink[] = processedUrls.map((url, index) => {
-        const position = Math.min(2 + index * 2, paragraphs.length - 1);
+        const position = Math.min(1 + index * 2, paragraphs.length - 1);
         return {
           url: url.url,
           anchorText: url.keyword,
@@ -116,16 +127,19 @@ export const useContentProcessor = () => {
           paragraph: paragraphs[position]
         };
       });
+      onProgress(90);
+      console.log("Link pozisyonları belirlendi:", links);
 
       // Linkleri içeriğe ekle
       const linkedContent = insertLinks(articleContent, links);
-      onProgress(90);
+      onProgress(95);
+      console.log("Linkler içeriğe eklendi");
 
       onProcessComplete(links, linkedContent);
       onProgress(100);
 
       toast({
-        description: "İçerik başarıyla linklendi ve rapor oluşturuldu.",
+        description: `${links.length} adet link başarıyla eklendi ve rapor oluşturuldu.`,
       });
 
     } catch (error) {

@@ -23,7 +23,7 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "makale_linked.txt";
+    a.download = "makale_linked.html";
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -35,7 +35,7 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
       <CardContent className="pt-6">
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Link Ekleme Raporu</h3>
+            <h3 className="text-lg font-semibold">Link Ekleme Raporu ({links.length} link eklendi)</h3>
             <Button onClick={downloadContent} variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
               İşlenmiş Makaleyi İndir
@@ -47,9 +47,9 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[200px]">URL</TableHead>
-                  <TableHead>Anchor Text</TableHead>
+                  <TableHead>Link Metni</TableHead>
                   <TableHead>Pozisyon</TableHead>
-                  <TableHead>Benzerlik Skoru</TableHead>
+                  <TableHead>Benzerlik</TableHead>
                   <TableHead className="w-[300px]">Eklendiği Paragraf</TableHead>
                 </TableRow>
               </TableHeader>
@@ -57,17 +57,23 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
                 {links.map((link, index) => (
                   <TableRow key={index}>
                     <TableCell className="max-w-[200px] truncate">
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      <a 
+                        href={link.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-primary hover:underline"
+                      >
                         {link.url}
                       </a>
                     </TableCell>
-                    <TableCell>{link.anchorText}</TableCell>
+                    <TableCell className="font-medium">{link.anchorText}</TableCell>
                     <TableCell>{parseInt(link.position.split('_')[1]) + 1}. paragraf</TableCell>
                     <TableCell>{(link.similarityScore * 100).toFixed(1)}%</TableCell>
                     <TableCell className="max-w-[300px]">
-                      <div className="max-h-[100px] overflow-y-auto">
-                        {link.paragraph}
-                      </div>
+                      <div 
+                        className="max-h-[100px] overflow-y-auto prose prose-sm"
+                        dangerouslySetInnerHTML={{ __html: link.paragraph }}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -78,7 +84,7 @@ const LinkReport = ({ links, content }: LinkReportProps) => {
           <div className="mt-4">
             <h4 className="text-md font-semibold mb-2">İşlenmiş İçerik Önizleme</h4>
             <div 
-              className="p-4 rounded-md border bg-muted max-h-[300px] overflow-auto whitespace-pre-wrap"
+              className="p-4 rounded-md border bg-muted overflow-auto whitespace-pre-wrap prose prose-sm max-h-[300px]"
               dangerouslySetInnerHTML={{ __html: content }}
             />
           </div>
