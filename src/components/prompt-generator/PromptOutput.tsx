@@ -21,34 +21,12 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const { toast } = useToast();
 
-  const validateApiKey = (key: string): string | null => {
-    // Remove any whitespace and trim
-    const trimmedKey = key.trim();
-    
-    // If the key is already in a valid format, return it with Bearer prefix
-    if (trimmedKey.length > 10) {
-      return `Bearer ${trimmedKey}`;
-    }
-    
-    return null;
-  };
-
   const generateImages = async () => {
     const apiKey = localStorage.getItem("recraft_api_key");
     if (!apiKey) {
       toast({
         title: "Error",
         description: "Please set your Recraft.ai API key in settings",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const validatedKey = validateApiKey(apiKey);
-    if (!validatedKey) {
-      toast({
-        title: "Error",
-        description: "Invalid API key format. Please ensure you've copied the entire API key from Recraft.ai",
         variant: "destructive",
       });
       return;
@@ -62,7 +40,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": validatedKey
+          "Authorization": apiKey.trim()
         },
         body: JSON.stringify({
           prompt: content,
