@@ -28,9 +28,9 @@ const ContentDisplay = ({ content, includeFAQ }: ContentDisplayProps) => {
   const copyAllFAQs = () => {
     if (!content.faq) return;
     
-    const allFAQs = content.faq.questions.map((item) => (
-      `Soru: ${item.question}\nCevap: ${item.answer}\n\n`
-    )).join('');
+    const allFAQs = `<h2>Sıkça Sorulan Sorular</h2>\n\n${content.faq.questions.map((item) => (
+      `<h3><strong>${item.question}</strong></h3>\n${item.answer}\n\n`
+    )).join('')}`;
     
     copyToClipboard(allFAQs.trim());
   };
