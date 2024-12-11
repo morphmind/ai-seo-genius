@@ -23,27 +23,57 @@ export class ContentMatcher {
     availableUrls: URLData[],
     maxLinks: number = 5
   ): Array<URLData & { similarity: number }> {
-    console.log("Article Analysis:", articleAnalysis);
-    console.log("Available URLs:", availableUrls);
+    console.log("Article Analysis:", JSON.stringify(articleAnalysis, null, 2));
+    console.log("Available URLs:", JSON.stringify(availableUrls, null, 2));
 
-    const scoredUrls = availableUrls.map(urlData => {
-      const similarity = this.similarityCalculator.calculateContentSimilarity(
-        (articleAnalysis.ana_konular || []).concat(articleAnalysis.anahtar_kelimeler || []),
-        (urlData.analysis?.ana_konular || []).concat(urlData.analysis?.anahtar_kelimeler || []),
-        articleAnalysis.baglamsal_bilgi || '',
-        urlData.analysis?.baglamsal_bilgi || ''
-      );
+    if (!articleAnalysis || !availableUrls?.length) {
+      console.log("No article analysis or URLs available");
+      return [];
+    }
 
-      return { ...urlData, similarity };
-    });
+    const articleKeywords = [
+      ...(articleAnalysis.ana_konular || []),
+      ...(articleAnalysis.anahtar_kelimeler || [])
+    ];
 
-    // Benzerlik eşiği 0.05 olarak ayarlandı
+    console.log("Article Keywords:", articleKeywords);
+
+    const scoredUrls = availableUrls
+      .filter(urlData => urlData && urlData.analysis) // Sadece geçerli URL'leri filtrele
+      .map(urlData => {
+        const urlKeywords = [
+          ...(urlData.analysis?.ana_konular || []),
+          ...(urlData.analysis?.anahtar_kelimeler || [])
+        ];
+
+        console.log(`Processing URL ${urlData.url}:`, {
+          urlKeywords,
+          articleKeywords
+        });
+
+        const similarity = this.similarityCalculator.calculateContentSimilarity(
+          articleKeywords,
+          urlKeywords,
+          articleAnalysis.baglamsal_bilgi || '',
+          urlData.analysis?.baglamsal_bilgi || ''
+        );
+
+        console.log(`Similarity score for ${urlData.url}:`, similarity);
+
+        return { ...urlData, similarity };
+      });
+
+    // Benzerlik eşiği 0.01'e düşürüldü ve daha detaylı loglama eklendi
     const filteredUrls = scoredUrls
-      .filter(url => url.similarity > 0.05)
+      .filter(url => {
+        const passes = url.similarity > 0.01;
+        console.log(`URL ${url.url} ${passes ? 'passed' : 'failed'} similarity threshold:`, url.similarity);
+        return passes;
+      })
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, maxLinks);
 
-    console.log("Filtered URLs:", filteredUrls);
+    console.log("Final filtered URLs:", filteredUrls);
     return filteredUrls;
   }
 }
