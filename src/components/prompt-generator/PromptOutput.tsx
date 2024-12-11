@@ -45,7 +45,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
         body: JSON.stringify({
           prompt: content,
           n: 2,
-          size: "1024x1024",
+          size: "2048x1024",
           style: "digital_illustration"
         })
       });
@@ -154,6 +154,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
       </CardContent>
     </Card>
   );
+
 };
 
 export default PromptOutput;
