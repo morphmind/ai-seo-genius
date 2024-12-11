@@ -16,11 +16,20 @@ const ImagePromptGenerator = () => {
   const { toast } = useToast();
 
   const generatePromptTemplate = (title: string) => {
-    return `Generate a detailed image prompt based on this request:
+    return `You are an expert at creating detailed image prompts for blog post featured images. 
+    
+Title: "${title}"
 
-recraft.ai ile "${title}" konu başlıklı blog gönderime featured image oluşturacağım. görsellerimiz belli bir konseptte olacak. illustration olacak. çok karmaşık görseller istemiyorum. konu başlığını net ve temiz bir şekilde anlatan şık görseller istiyorum.
+Create a detailed, specific image prompt for an illustration that will be used as the featured image for this blog post.
+The image should:
+- Be an illustration style (not realistic or photographic)
+- Be clean and not too complex
+- Clearly represent the topic and meaning of the title
+- Include specific details about elements, colors, composition, and mood
+- Be creative and engaging while staying relevant to the topic
+- Not use any copyrighted characters or elements
 
-Please provide a detailed image prompt that follows these guidelines and incorporates the title "${title}" appropriately.`;
+Format your response as a single, detailed paragraph describing exactly what should be in the illustration.`;
   };
 
   const handleGenerate = async () => {
@@ -48,20 +57,22 @@ Please provide a detailed image prompt that follows these guidelines and incorpo
 
     setLoading(true);
     try {
-      // Here you would make the actual API call to GPT
-      // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // This is where you would normally send the prompt template to GPT
-      // and get back a generated image prompt
-      // For demonstration, we'll use a mock response
       const promptTemplate = generatePromptTemplate(inputTitle);
       console.log("Sending to GPT:", promptTemplate);
       
-      // Mock GPT response - in reality, this would come from the API
-      const mockGptResponse = `A clean and elegant illustration for "${inputTitle}", featuring minimalist design elements with a cohesive visual style. The illustration should be simple yet sophisticated, avoiding complex details while clearly conveying the article's theme through carefully chosen visual elements.`;
+      // Here we would make the actual API call to GPT
+      // For demonstration, we'll simulate a more contextual response
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      setPrompt(mockGptResponse);
+      // This is a mock response - in production, this would come from the API
+      let mockResponse = "";
+      if (inputTitle.toLowerCase().includes("ingilizce") && inputTitle.toLowerCase().includes("çizgi film")) {
+        mockResponse = `A playful and inviting illustration highlighting cartoons as a fun way to learn English. The design features a TV screen with colorful cartoon characters (generic and not copyrighted) speaking in speech bubbles that include simple English words or phrases like 'Hello!' or 'How are you?'. Surround the TV with books, headphones, and a globe to emphasize learning and global communication. Use bright, cheerful colors like yellow, red, and blue to create a lively and engaging atmosphere.`;
+      } else {
+        mockResponse = `An engaging illustration related to "${inputTitle}" that captures the essence of the topic through carefully chosen visual elements. The design should incorporate relevant symbols and metaphors, using a cohesive color palette that matches the topic's mood. Include specific details that relate to the subject matter while maintaining a clean, uncluttered composition.`;
+      }
+      
+      setPrompt(mockResponse);
     } catch (error) {
       toast({
         title: "Error",
