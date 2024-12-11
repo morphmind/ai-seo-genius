@@ -18,21 +18,12 @@ export class ContentAnalyzer {
           messages: [
             {
               role: "system",
-              content: "Sen bir içerik analiz uzmanısın. Verilen metni analiz edip ana konuları, anahtar kelimeleri ve bağlamı çıkaracaksın."
+              content: "Sen bir içerik analiz uzmanısın. Verilen metni analiz edip ana konuları, anahtar kelimeleri ve bağlamı çıkaracaksın. Yanıtı sadece JSON formatında ver, başka bir şey ekleme."
             },
             {
               role: "user",
-              content: `Bu içeriği analiz et ve şu formatta döndür:
-                {
-                  "main_topics": ["konu1", "konu2"],
-                  "keywords": ["kelime1", "kelime2"],
-                  "context": "içeriğin genel bağlamı",
-                  "content_type": "içerik tipi",
-                  "key_concepts": ["kavram1", "kavram2"],
-                  "secondary_topics": ["ikincil_konu1", "ikincil_konu2"]
-                }
-
-                İçerik: ${content}`
+              content: `Bu içeriği analiz et:
+                ${content}`
             }
           ],
           temperature: 0.3,
@@ -40,14 +31,19 @@ export class ContentAnalyzer {
         })
       });
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(`API Error: ${data.error?.message || 'Unknown error'}`);
+        throw new Error(`API Error: ${response.statusText}`);
       }
 
+      const data = await response.json();
+      console.log("API Response:", data.choices[0].message.content);
+      
+      // Markdown formatını temizle
+      const cleanedContent = data.choices[0].message.content.replace(/```json\n?|\n?```/g, '').trim();
+      console.log("Cleaned content:", cleanedContent);
+      
       try {
-        return JSON.parse(data.choices[0].message.content);
+        return JSON.parse(cleanedContent);
       } catch (e) {
         console.error("JSON parse error:", e);
         console.log("Raw content:", data.choices[0].message.content);
