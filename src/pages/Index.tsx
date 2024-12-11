@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/components/theme-provider";
 import ContentGenerator from "@/components/ContentGenerator";
 import ImagePromptGenerator from "@/components/ImagePromptGenerator";
+import InternalLinkGenerator from "@/components/InternalLinkGenerator";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -39,15 +40,19 @@ const Index = () => {
 
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="p-6">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="content">Content Generator</TabsTrigger>
               <TabsTrigger value="image">Image Prompt</TabsTrigger>
+              <TabsTrigger value="internal-link">Internal Link</TabsTrigger>
             </TabsList>
             <TabsContent value="content" className="mt-0">
               <ContentGenerator />
             </TabsContent>
             <TabsContent value="image" className="mt-0">
               <ImagePromptGenerator />
+            </TabsContent>
+            <TabsContent value="internal-link" className="mt-0">
+              <InternalLinkGenerator />
             </TabsContent>
           </Tabs>
         </div>
