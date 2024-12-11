@@ -21,6 +21,23 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const { toast } = useToast();
 
+  const validateApiKey = (key: string): string | null => {
+    // Remove any whitespace
+    const trimmedKey = key.trim();
+    
+    // If it already starts with Bearer, remove it for validation
+    const tokenPart = trimmedKey.startsWith('Bearer ') 
+      ? trimmedKey.substring(7) 
+      : trimmedKey;
+    
+    // Check if it's a valid JWT format (should have 2 dots making 3 parts)
+    if (!tokenPart.includes('.') || tokenPart.split('.').length !== 3) {
+      return null;
+    }
+    
+    return `Bearer ${tokenPart}`;
+  };
+
   const generateImages = async () => {
     const apiKey = localStorage.getItem("recraft_api_key");
     if (!apiKey) {
@@ -32,19 +49,25 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
       return;
     }
 
+    const validatedKey = validateApiKey(apiKey);
+    if (!validatedKey) {
+      toast({
+        title: "Error",
+        description: "Invalid API key format. Please ensure you've copied the entire API key from Recraft.ai",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      // Clean up the API key - remove any whitespace and ensure it's properly formatted
-      const cleanApiKey = apiKey.trim();
-      
-      // Log the API request details for debugging
       console.log("Making request to Recraft.ai API");
       
       const response = await fetch("https://api.recraft.ai/v1/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": cleanApiKey.startsWith("Bearer ") ? cleanApiKey : `Bearer ${cleanApiKey}`
+          "Authorization": validatedKey
         },
         body: JSON.stringify({
           prompt: content,
@@ -65,7 +88,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
       console.error("Generation error:", error);
       toast({
         title: "Error",
-        description: "Failed to generate images. Please check your API key format and try again.",
+        description: "Failed to generate images. Please ensure your API key is valid and try again.",
         variant: "destructive",
       });
     } finally {
