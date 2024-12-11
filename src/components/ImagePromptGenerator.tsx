@@ -15,6 +15,10 @@ const ImagePromptGenerator = () => {
   const [model, setModel] = useState<Model>("gpt-4o-mini");
   const { toast } = useToast();
 
+  const generatePrompt = (title: string) => {
+    return `recraft.ai ile "${title}" konu başlıklı blog gönderime featured image oluşturacağım. görsellerimiz belli bir konseptte olacak. illustration olacak. çok karmaşık görseller istemiyorum. konu başlığını net ve temiz bir şekilde anlatan şık görseller istiyorum.`;
+  };
+
   const handleGenerate = async () => {
     if (!inputTitle.trim()) {
       toast({
@@ -42,7 +46,8 @@ const ImagePromptGenerator = () => {
     try {
       // Mock API call for now
       await new Promise(resolve => setTimeout(resolve, 1500));
-      setPrompt("A minimalist illustration of a computer screen displaying SEO metrics and analytics, using a clean design style with blue and white color scheme, featuring simple geometric shapes and clear data visualization elements.");
+      const generatedPrompt = generatePrompt(inputTitle);
+      setPrompt(generatedPrompt);
     } catch (error) {
       toast({
         title: "Error",
