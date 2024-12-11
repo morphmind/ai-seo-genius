@@ -40,7 +40,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": apiKey.trim()
+          "Authorization": `Bearer ${apiKey.trim()}`
         },
         body: JSON.stringify({
           prompt: content,
