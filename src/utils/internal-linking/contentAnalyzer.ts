@@ -5,6 +5,60 @@ export class ContentAnalyzer {
     this.apiKey = apiKey;
   }
 
+  async analyzeContent(content: string): Promise<any> {
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "Sen bir içerik analiz uzmanısın. Verilen metni analiz edip ana konuları, anahtar kelimeleri ve bağlamı çıkaracaksın."
+            },
+            {
+              role: "user",
+              content: `Bu içeriği analiz et ve şu formatta döndür:
+                {
+                  "main_topics": ["konu1", "konu2"],
+                  "keywords": ["kelime1", "kelime2"],
+                  "context": "içeriğin genel bağlamı",
+                  "content_type": "içerik tipi",
+                  "key_concepts": ["kavram1", "kavram2"],
+                  "secondary_topics": ["ikincil_konu1", "ikincil_konu2"]
+                }
+
+                İçerik: ${content}`
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 1000
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${data.error?.message || 'Unknown error'}`);
+      }
+
+      try {
+        return JSON.parse(data.choices[0].message.content);
+      } catch (e) {
+        console.error("JSON parse error:", e);
+        console.log("Raw content:", data.choices[0].message.content);
+        throw new Error("Content analysis result parsing failed");
+      }
+    } catch (error) {
+      console.error("Content analysis error:", error);
+      throw error;
+    }
+  }
+
   async analyzeParagraphs(content: string): Promise<string[]> {
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, 'text/html');
