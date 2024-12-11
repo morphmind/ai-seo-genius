@@ -1,38 +1,57 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon } from "lucide-react";
+import { Settings as SettingsIcon, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/components/theme-provider";
 import ContentGenerator from "@/components/ContentGenerator";
 import ImagePromptGenerator from "@/components/ImagePromptGenerator";
 
 const Index = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("content");
+  const { theme, setTheme } = useTheme();
 
   return (
-    <div className="container max-w-2xl py-10">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">SEO Tools</h1>
-        <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
-          <SettingsIcon className="h-5 w-5" />
-        </Button>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="content">Content Generator</TabsTrigger>
-          <TabsTrigger value="image">Image Prompt</TabsTrigger>
-        </TabsList>
-        <div className="mt-6">
-          <TabsContent value="content">
-            <ContentGenerator />
-          </TabsContent>
-          <TabsContent value="image">
-            <ImagePromptGenerator />
-          </TabsContent>
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-4xl py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
+            AI SEO Tools
+          </h1>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
+              <SettingsIcon className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </Tabs>
+
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="p-6">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="content">Content Generator</TabsTrigger>
+              <TabsTrigger value="image">Image Prompt</TabsTrigger>
+            </TabsList>
+            <TabsContent value="content" className="mt-0">
+              <ContentGenerator />
+            </TabsContent>
+            <TabsContent value="image" className="mt-0">
+              <ImagePromptGenerator />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };
