@@ -118,8 +118,8 @@ const ContentGenerator = () => {
                 <SelectValue placeholder="İçerik türü seçin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="seo">SEO İçeriği</SelectItem>
-                <SelectItem value="faq">Soru & Cevap (FAQ)</SelectItem>
+                <SelectItem value="seo">Makale Ögeleri</SelectItem>
+                <SelectItem value="faq">Makale Ögeleri + FAQ</SelectItem>
               </SelectContent>
             </Select>
           </div>

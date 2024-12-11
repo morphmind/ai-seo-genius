@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GeneratedContent, ContentType, OutputType } from "@/types/content";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface ContentDisplayProps {
@@ -53,37 +54,44 @@ const ContentDisplay = ({ content, contentType, outputType }: ContentDisplayProp
   if (contentType === "faq" && content.faq) {
     return (
       <div className="space-y-4">
-        {outputType === "text" ? (
-          <Card>
-            <CardContent className="pt-6">
-              <Accordion type="single" collapsible className="w-full">
-                {content.faq.questions.map((item, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-left">
-                      {item.question}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {item.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <Label>FAQ Schema Markup</Label>
-                <textarea
-                  className="w-full min-h-[300px] p-3 rounded-md border bg-background text-foreground font-mono text-sm"
-                  value={content.faq.schema}
-                  readOnly
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <Tabs defaultValue="text" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="text">Normal FAQ</TabsTrigger>
+            <TabsTrigger value="schema">Schema FAQ</TabsTrigger>
+          </TabsList>
+          <TabsContent value="text">
+            <Card>
+              <CardContent className="pt-6">
+                <Accordion type="single" collapsible className="w-full">
+                  {content.faq.questions.map((item, index) => (
+                    <AccordionItem key={index} value={`item-${index}`}>
+                      <AccordionTrigger className="text-left">
+                        {item.question}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        {item.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="schema">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <Label>FAQ Schema Markup</Label>
+                  <textarea
+                    className="w-full min-h-[300px] p-3 rounded-md border bg-background text-foreground font-mono text-sm"
+                    value={content.faq.schema}
+                    readOnly
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
