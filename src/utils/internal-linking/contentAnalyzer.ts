@@ -14,20 +14,18 @@ export class ContentAnalyzer {
           "Authorization": `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4o",
           messages: [
             {
               role: "system",
-              content: "Sen bir içerik analiz uzmanısın. Verilen metni analiz edip ana konuları, anahtar kelimeleri ve bağlamı çıkaracaksın. Yanıtı sadece JSON formatında ver, başka bir şey ekleme."
+              content: "İçerik analizi yapan bir uzmansın. Verilen metni analiz edip aşağıdaki formatta JSON yanıtı döndür. Başka bir şey ekleme, sadece JSON döndür:\n{\n  \"ana_konular\": [\"konu1\", \"konu2\"],\n  \"anahtar_kelimeler\": [\"kelime1\", \"kelime2\"],\n  \"baglamsal_bilgi\": \"metnin genel bağlamı\"\n}"
             },
             {
               role: "user",
-              content: `Bu içeriği analiz et:
-                ${content}`
+              content: `Bu içeriği analiz et ve belirtilen JSON formatında döndür:\n${content}`
             }
           ],
-          temperature: 0.3,
-          max_tokens: 1000
+          temperature: 0.3
         })
       });
 
@@ -38,42 +36,14 @@ export class ContentAnalyzer {
       const data = await response.json();
       console.log("API Response:", data.choices[0].message.content);
       
-      // Markdown formatını temizle
       const cleanedContent = data.choices[0].message.content.replace(/```json\n?|\n?```/g, '').trim();
       console.log("Cleaned content:", cleanedContent);
       
-      try {
-        return JSON.parse(cleanedContent);
-      } catch (e) {
-        console.error("JSON parse error:", e);
-        console.log("Raw content:", data.choices[0].message.content);
-        throw new Error("Content analysis result parsing failed");
-      }
+      return JSON.parse(cleanedContent);
     } catch (error) {
       console.error("Content analysis error:", error);
       throw error;
     }
-  }
-
-  async analyzeParagraphs(content: string): Promise<string[]> {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(content, 'text/html');
-    const paragraphs = Array.from(doc.querySelectorAll('p'));
-    
-    return paragraphs
-      .filter(p => {
-        const text = p.textContent?.trim() || '';
-        return text && !this.isNavigationOrFooter(p);
-      })
-      .map(p => p.textContent || '');
-  }
-
-  private isNavigationOrFooter(element: Element): boolean {
-    if (element.className) {
-      const classes = element.className.toLowerCase();
-      return ['nav', 'menu', 'footer', 'header'].some(term => classes.includes(term));
-    }
-    return false;
   }
 
   async extractUrlsWithKeywords(relevantPosts: any[]): Promise<any[]> {
@@ -96,23 +66,20 @@ export class ContentAnalyzer {
             messages: [
               {
                 role: "system",
-                content: "Sen bir SEO ve dil uzmanısın."
+                content: "SEO ve dil uzmanısın. URL'den çıkarılan anahtar kelimeyi optimize et."
               },
               {
                 role: "user",
                 content: `Bu URL'den çıkarılan anahtar kelimeyi düzelt ve optimize et: '${keyword}'
-
                 Kurallar:
                 1. Dil bilgisi kurallarına uygun olmalı
                 2. Doğal ve akıcı olmalı
                 3. SEO dostu olmalı
                 4. Anlamlı ve konuyla alakalı olmalı
-
-                Sadece düzeltilmiş kelimeyi döndür, başka bir şey ekleme.`
+                Sadece optimize edilmiş kelimeyi döndür.`
               }
             ],
-            temperature: 0.3,
-            max_tokens: 50
+            temperature: 0.3
           })
         });
 

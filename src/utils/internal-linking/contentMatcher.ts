@@ -2,12 +2,8 @@ import { SimilarityCalculator } from './similarityCalculator';
 
 interface AnalysisResult {
   ana_konular: string[];
-  anahtar_kelime: string[];
-  bağlam: {
-    genel: string;
-    hedef_kitle: string;
-    amaç: string;
-  };
+  anahtar_kelimeler: string[];
+  baglamsal_bilgi: string;
 }
 
 interface URLData {
@@ -27,22 +23,27 @@ export class ContentMatcher {
     availableUrls: URLData[],
     maxLinks: number = 5
   ): Array<URLData & { similarity: number }> {
-    // Calculate similarity scores
+    console.log("Article Analysis:", articleAnalysis);
+    console.log("Available URLs:", availableUrls);
+
     const scoredUrls = availableUrls.map(urlData => {
       const similarity = this.similarityCalculator.calculateContentSimilarity(
-        articleAnalysis.ana_konular.concat(articleAnalysis.anahtar_kelime),
-        urlData.analysis?.ana_konular?.concat(urlData.analysis?.anahtar_kelime) || [],
-        articleAnalysis.bağlam.genel,
-        urlData.analysis?.bağlam?.genel || ''
+        (articleAnalysis.ana_konular || []).concat(articleAnalysis.anahtar_kelimeler || []),
+        (urlData.analysis?.ana_konular || []).concat(urlData.analysis?.anahtar_kelimeler || []),
+        articleAnalysis.baglamsal_bilgi || '',
+        urlData.analysis?.baglamsal_bilgi || ''
       );
 
       return { ...urlData, similarity };
     });
 
-    // Benzerlik eşiğini 0.15'ten 0.05'e düşürdük
-    return scoredUrls
+    // Benzerlik eşiği 0.05 olarak ayarlandı
+    const filteredUrls = scoredUrls
       .filter(url => url.similarity > 0.05)
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, maxLinks);
+
+    console.log("Filtered URLs:", filteredUrls);
+    return filteredUrls;
   }
 }
