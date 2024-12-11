@@ -14,6 +14,12 @@ const USER_AGENTS = [
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 ];
 
+const CORS_PROXIES = [
+  "https://api.allorigins.win/raw?url=",
+  "https://corsproxy.io/?",
+  "https://cors-anywhere.herokuapp.com/"
+];
+
 const URLAnalyzer = () => {
   const [urls, setUrls] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -24,44 +30,66 @@ const URLAnalyzer = () => {
     return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
   };
 
+  const parseXMLSitemap = (xmlText: string): string[] => {
+    const urls: string[] = [];
+    const matches = xmlText.match(/<loc>([^<]+)<\/loc>/g);
+    
+    if (matches) {
+      matches.forEach(match => {
+        const url = match.replace(/<\/?loc>/g, '');
+        urls.push(url);
+      });
+    }
+    
+    return urls;
+  };
+
+  const fetchWithProxy = async (url: string, proxyUrl: string) => {
+    const response = await fetch(`${proxyUrl}${encodeURIComponent(url)}`, {
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.text();
+  };
+
   const fetchUrlContent = async (url: string) => {
+    console.log(`Attempting to fetch: ${url}`);
+    
+    // Try each proxy in sequence
+    for (const proxyUrl of CORS_PROXIES) {
+      try {
+        console.log(`Trying proxy: ${proxyUrl}`);
+        const content = await fetchWithProxy(url, proxyUrl);
+        console.log(`Successfully fetched content with ${proxyUrl}, length: ${content.length}`);
+        return content;
+      } catch (error) {
+        console.warn(`Proxy ${proxyUrl} failed:`, error);
+        continue;
+      }
+    }
+
+    // If all proxies fail, try direct fetch as last resort
     try {
-      // First try with a proxy service
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl, {
+      console.log('Attempting direct fetch...');
+      const response = await fetch(url, {
         headers: {
           'User-Agent': getRandomUserAgent(),
         },
+        mode: 'no-cors',
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
       const text = await response.text();
+      console.log(`Direct fetch successful, content length: ${text.length}`);
       return text;
-    } catch (proxyError) {
-      console.warn(`Proxy fetch failed for ${url}, trying direct fetch:`, proxyError);
-      
-      try {
-        // Fallback to direct fetch if proxy fails
-        const response = await fetch(url, {
-          headers: {
-            'User-Agent': getRandomUserAgent(),
-          },
-          mode: 'no-cors', // This allows the request to proceed even with CORS issues
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const text = await response.text();
-        return text;
-      } catch (directError) {
-        console.error(`Direct fetch also failed for ${url}:`, directError);
-        throw directError;
-      }
+    } catch (error) {
+      console.error('Direct fetch failed:', error);
+      throw new Error(`Failed to fetch ${url} with all methods`);
     }
   };
 
@@ -101,109 +129,128 @@ const URLAnalyzer = () => {
     let processedCount = 0;
 
     try {
-      for (const url of urlList) {
+      for (const sitemapUrl of urlList) {
         try {
-          console.log(`Fetching content for URL: ${url}`);
-          const content = await fetchUrlContent(url);
+          console.log(`Processing sitemap: ${sitemapUrl}`);
+          const sitemapContent = await fetchUrlContent(sitemapUrl);
           
-          if (!content) {
-            console.warn(`No content received for ${url}`);
+          if (!sitemapContent) {
+            console.warn(`No content received for sitemap ${sitemapUrl}`);
             continue;
           }
 
-          console.log(`Successfully fetched content for ${url}, length: ${content.length}`);
+          const pageUrls = parseXMLSitemap(sitemapContent);
+          console.log(`Found ${pageUrls.length} URLs in sitemap`);
 
-          const prompt = `Analyze this URL and its content for SEO purposes:
-          URL: ${url}
-          Content: ${content.substring(0, 1500)}
-          
-          Please provide:
-          1. Main topics (2-3 key subjects)
-          2. Important keywords (8-10 relevant terms)
-          3. Brief context description
-          4. Potential anchor texts (2-3 variations)
-          5. Content depth analysis (level and key concepts)
-          6. Whether it's a blog post or not
-          
-          Format the response as a valid JSON object with these exact fields:
-          {
-            "main_topics": [],
-            "keywords": [],
-            "context": "",
-            "potential_anchor_texts": [],
-            "content_depth": {
-              "level": "",
-              "key_concepts": []
-            },
-            "is_blog_post": false
-          }`;
+          for (const pageUrl of pageUrls) {
+            try {
+              console.log(`Fetching page content: ${pageUrl}`);
+              const pageContent = await fetchUrlContent(pageUrl);
 
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-              model: "gpt-4",
-              messages: [
-                {
-                  role: "system",
-                  content: "You are an SEO expert. Always respond with valid JSON only, matching the exact structure provided."
+              if (!pageContent) {
+                console.warn(`No content received for ${pageUrl}`);
+                continue;
+              }
+
+              const prompt = `Analyze this URL and its content for SEO purposes:
+              URL: ${pageUrl}
+              Content: ${pageContent.substring(0, 1500)}
+              
+              Please provide:
+              1. Main topics (2-3 key subjects)
+              2. Important keywords (8-10 relevant terms)
+              3. Brief context description
+              4. Potential anchor texts (2-3 variations)
+              5. Content depth analysis (level and key concepts)
+              6. Whether it's a blog post or not
+              
+              Format the response as a valid JSON object with these exact fields:
+              {
+                "main_topics": [],
+                "keywords": [],
+                "context": "",
+                "potential_anchor_texts": [],
+                "content_depth": {
+                  "level": "",
+                  "key_concepts": []
                 },
-                {
-                  role: "user",
-                  content: prompt
-                }
-              ],
-              temperature: 0.7
-            })
-          });
+                "is_blog_post": false
+              }`;
 
-          if (!response.ok) {
-            throw new Error(`API error: ${response.statusText}`);
+              const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                  model: "gpt-4o-mini",
+                  messages: [
+                    {
+                      role: "system",
+                      content: "You are an SEO expert. Always respond with valid JSON only, matching the exact structure provided."
+                    },
+                    {
+                      role: "user",
+                      content: prompt
+                    }
+                  ],
+                  temperature: 0.7
+                })
+              });
+
+              if (!response.ok) {
+                throw new Error(`API error: ${response.statusText}`);
+              }
+
+              const data = await response.json();
+              let analysis;
+              
+              try {
+                const content = data.choices[0].message.content;
+                analysis = JSON.parse(content.trim());
+              } catch (parseError) {
+                console.error("JSON parse error:", parseError);
+                analysis = {
+                  main_topics: [],
+                  keywords: [],
+                  context: "Error analyzing content",
+                  potential_anchor_texts: [],
+                  content_depth: {
+                    level: "unknown",
+                    key_concepts: []
+                  },
+                  is_blog_post: false
+                };
+              }
+
+              urlDatabase[pageUrl] = {
+                url: pageUrl,
+                analysis,
+                analyzed_at: new Date().toISOString()
+              };
+
+              processedCount++;
+              setProgress((processedCount / pageUrls.length) * 100);
+
+              // Add delay between requests
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (pageError) {
+              console.error(`Error processing page ${pageUrl}:`, pageError);
+            }
           }
-
-          const data = await response.json();
-          let analysis;
-          
-          try {
-            const content = data.choices[0].message.content;
-            analysis = JSON.parse(content.trim());
-          } catch (parseError) {
-            console.error("JSON parse error:", parseError);
-            analysis = {
-              main_topics: [],
-              keywords: [],
-              context: "Error analyzing content",
-              potential_anchor_texts: [],
-              content_depth: {
-                level: "unknown",
-                key_concepts: []
-              },
-              is_blog_post: false
-            };
-          }
-
-          urlDatabase[url] = {
-            url,
-            analysis,
-            analyzed_at: new Date().toISOString()
-          };
-
-          processedCount++;
-          setProgress((processedCount / urlList.length) * 100);
-
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-        } catch (error) {
-          console.error(`Error processing URL ${url}:`, error);
+        } catch (sitemapError) {
+          console.error(`Error processing sitemap ${sitemapUrl}:`, sitemapError);
           toast({
             title: "Uyarı",
-            description: `${url} işlenirken hata oluştu. Diğer URL'lerle devam ediliyor.`,
+            description: `${sitemapUrl} işlenirken hata oluştu. Diğer URL'lerle devam ediliyor.`,
             variant: "destructive",
           });
         }
+      }
+
+      if (Object.keys(urlDatabase).length === 0) {
+        throw new Error("No URLs were successfully processed");
       }
 
       const blob = new Blob([JSON.stringify(urlDatabase, null, 2)], { type: "application/json" });
