@@ -46,77 +46,64 @@ const InternalLinkGenerator = () => {
     setIsProcessing(true);
 
     try {
-      // Pyodide'yi yükle
-      if (!window.pyodide) {
-        window.pyodide = await window.loadPyodide();
+      const apiKey = localStorage.getItem("openai_api_key");
+      if (!apiKey) {
+        toast({
+          title: "Hata",
+          description: "Lütfen OpenAI API anahtarınızı ayarlarda belirtin",
+          variant: "destructive",
+        });
+        return;
       }
 
-      // URL database'ini ve makale içeriğini oku
+      const contentAnalyzer = new ContentAnalyzer(apiKey);
+      const contentMatcher = new ContentMatcher();
+
+      // URL database'ini oku
       const databaseContent = await urlDatabase.text();
+      const urlData = JSON.parse(databaseContent);
 
-      // Python kodunu çalıştır
-      await window.pyodide.loadPackagesFromImports(`
-        import json
-        from pathlib import Path
-        import os
-      `);
+      // Makale içeriğini analiz et
+      const paragraphs = await contentAnalyzer.analyzeParagraphs(articleContent);
+      
+      // İlgili içerikleri bul
+      const maxLinks = linkingMethod === "manual" ? parseInt(manualLinkCount) : Math.floor(articleContent.length / 500);
+      const relevantContent = contentMatcher.findRelevantContent(
+        {
+          main_topics: [],
+          keywords: [],
+          context: articleContent,
+          content_type: "article",
+          key_concepts: [],
+          secondary_topics: []
+        },
+        urlData,
+        maxLinks
+      );
 
-      // Geçici dosya sistemi oluştur
-      window.pyodide.runPython(`
-        os.makedirs("report", exist_ok=True)
-        
-        with open("url_database.json", "w") as f:
-          f.write("""${databaseContent}""")
-          
-        with open("article.txt", "w") as f:
-          f.write("""${articleContent}""")
-      `);
-
-      // Ana Python kodunu çalıştır
-      const result = window.pyodide.runPython(`
-        from src.internal_linking_system import InternalLinkingSystem
-        from src.utils.api_key_manager import ApiKeyManager
-        
-        api_key_manager = ApiKeyManager()
-        system = InternalLinkingSystem(
-          database_path="url_database.json",
-          article_path="article.txt",
-          api_key_manager=api_key_manager,
-          link_method="${linkingMethod}",
-          manual_link_count=${linkingMethod === "manual" ? manualLinkCount : "None"}
-        )
-        
-        system.initialize_api_key()
-        processed_content = system.process_single_article()
-        
-        with open("report/processed_article.txt", "w") as f:
-          f.write(processed_content)
-        
-        "İşlem tamamlandı!"
-      `);
-
+      // Link önerileri oluştur
+      const processedUrls = contentAnalyzer.extractUrlsWithKeywords(relevantContent);
+      
       // İşlenmiş makaleyi indir
-      const processedContent = window.pyodide.FS.readFile("report/processed_article.txt", { encoding: "utf8" });
-      const blob = new Blob([processedContent], { type: "text/plain" });
+      const blob = new Blob([JSON.stringify(processedUrls, null, 2)], { type: "application/json" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "processed_article.txt";
+      a.download = "processed_article.json";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
       toast({
-        title: "Başarılı",
-        description: result,
+        description: "İşlem tamamlandı ve sonuçlar indirildi.",
       });
 
     } catch (error) {
-      console.error('Python kodu çalıştırma hatası:', error);
+      console.error('İşlem hatası:', error);
       toast({
         title: "Hata",
-        description: "İşlem sırasında bir hata oluştu: " + String(error),
+        description: String(error),
         variant: "destructive",
       });
     } finally {

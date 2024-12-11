@@ -1,15 +1,17 @@
-import { LinkText, PostData } from './types';
-
 export class ContentAnalyzer {
-  constructor(private apiKey: string) {}
+  private apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
 
   async analyzeParagraphs(content: string): Promise<string[]> {
     const parser = new DOMParser();
-    const doc = parser.parseFromString(content, 'html');
+    const doc = parser.parseFromString(content, 'text/html');
     return Array.from(doc.querySelectorAll('p')).map(p => p.textContent || '');
   }
 
-  async generateLinkText(paragraphText: string, postData: PostData): Promise<LinkText | null> {
+  async generateLinkText(paragraphText: string, postData: any): Promise<any> {
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -18,7 +20,7 @@ export class ContentAnalyzer {
           "Authorization": `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: "gpt-4o",
           messages: [
             {
               role: "system",
@@ -39,8 +41,7 @@ export class ContentAnalyzer {
                 }
               `
             }
-          ],
-          temperature: 0.3
+          ]
         })
       });
 
@@ -56,19 +57,18 @@ export class ContentAnalyzer {
     }
   }
 
-  validateLinkText(linkText: LinkText, postData: PostData): boolean {
-    if (!linkText.anchor_text) return false;
+  validateLinkText(linkText: any, postData: any): boolean {
+    if (!linkText?.anchor_text) return false;
     
     const anchorLength = linkText.anchor_text.length;
     if (anchorLength < 3 || anchorLength > 60) return false;
     
-    // Anahtar kelimelerden en az birini içermeli
-    return postData.keywords.some(keyword => 
+    return postData.keywords.some((keyword: string) => 
       linkText.anchor_text.toLowerCase().includes(keyword.toLowerCase())
     );
   }
 
-  extractUrlsWithKeywords(posts: any[]): PostData[] {
+  extractUrlsWithKeywords(posts: any[]): any[] {
     return posts.map(post => ({
       url: post.url,
       similarity: post.similarity || 0,
