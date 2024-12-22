@@ -91,6 +91,58 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
     }
   };
 
+  const handleCopy = (text: string) => {
+    try {
+      // Geçici bir div elementi oluştur
+      const el = document.createElement('div');
+      el.setAttribute('contenteditable', 'true');
+      el.innerHTML = text;
+      el.style.position = 'fixed';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+
+      // Metni seç
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+
+      // Kopyalama dene
+      try {
+        document.execCommand('copy');
+        onCopy(text);
+        toast({
+          description: "İçerik kopyalandı",
+        });
+      } catch (err) {
+        // Alternatif yöntem
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        onCopy(text);
+        toast({
+          description: "İçerik kopyalandı",
+        });
+      }
+
+      // Temizlik
+      document.body.removeChild(el);
+    } catch (error) {
+      console.error('Kopyalama hatası:', error);
+      toast({
+        title: "Hata",
+        description: "Manuel olarak seçip kopyalayınız",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card className="shadow-md">
       <CardHeader className="pb-3">
@@ -101,7 +153,7 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
               variant="ghost"
               size="sm"
               className="hover:bg-gray-100"
-              onClick={() => onCopy(content)}
+              onClick={() => handleCopy(content)}
             >
               <Copy className="h-4 w-4" />
             </Button>
@@ -154,7 +206,6 @@ const PromptOutput = ({ title, content, onCopy, inputTitle }: PromptOutputProps)
       </CardContent>
     </Card>
   );
-
 };
 
 export default PromptOutput;

@@ -4,21 +4,39 @@ import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
 import Settings from "@/pages/Settings";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <Router>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </Router>
-        <Toaster />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          <Router>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Index />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute requireSettings>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Router>
+          <Toaster />
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -8,8 +8,10 @@ import { GeneratedContent, Provider, Model } from "@/types/content";
 import { generateSEOPrompt, generateFAQPrompt, parseAIResponse } from "@/utils/prompts";
 import ModelSelector from "./ModelSelector";
 import ContentDisplay from "./ContentDisplay";
+import ContentIdeas from "./ContentIdeas";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ContentGenerator = () => {
   const [inputTitle, setInputTitle] = useState("");
@@ -110,88 +112,101 @@ const ContentGenerator = () => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <ModelSelector 
-          provider={provider}
-          model={model}
-          onProviderChange={setProvider}
-          onModelChange={setModel}
-        />
-        
-        <div className="space-y-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Label className="whitespace-nowrap">Giriş Dili:</Label>
-              <RadioGroup
-                value={inputLanguage}
-                onValueChange={(value: "tr" | "en") => setInputLanguage(value)}
-                className="flex gap-3"
-              >
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="tr" id="input-tr" />
-                  <Label htmlFor="input-tr" className="cursor-pointer">TR</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="en" id="input-en" />
-                  <Label htmlFor="input-en" className="cursor-pointer">EN</Label>
-                </div>
-              </RadioGroup>
-            </div>
+      <Tabs defaultValue="generator" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="generator">SEO Optimizasyonu</TabsTrigger>
+          <TabsTrigger value="ideas">Content Ideas</TabsTrigger>
+        </TabsList>
 
-            <div className="flex items-center gap-2">
-              <Label className="whitespace-nowrap">Çıkış Dili:</Label>
-              <RadioGroup
-                value={outputLanguage}
-                onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}
-                className="flex gap-3"
-              >
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="tr" id="output-tr" />
-                  <Label htmlFor="output-tr" className="cursor-pointer">TR</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="en" id="output-en" />
-                  <Label htmlFor="output-en" className="cursor-pointer">EN</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label htmlFor="faq-mode" className="cursor-pointer">FAQ</Label>
-              <Switch
-                id="faq-mode"
-                checked={includeFAQ}
-                onCheckedChange={setIncludeFAQ}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Makale Başlığı</Label>
-            <Input
-              placeholder={`Başlığı ${inputLanguage === "tr" ? "Türkçe" : "İngilizce"} girin`}
-              value={inputTitle}
-              onChange={(e) => setInputTitle(e.target.value)}
+        <TabsContent value="generator" className="space-y-6 mt-6">
+          <div className="space-y-4">
+            <ModelSelector 
+              provider={provider}
+              model={model}
+              onProviderChange={setProvider}
+              onModelChange={setModel}
             />
-            <Button 
-              className="w-full"
-              onClick={handleGenerate}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Oluşturuluyor...
-                </>
-              ) : (
-                "İçerik Oluştur"
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Label className="whitespace-nowrap">Giriş Dili:</Label>
+                  <RadioGroup
+                    value={inputLanguage}
+                    onValueChange={(value: "tr" | "en") => setInputLanguage(value)}
+                    className="flex gap-3"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <RadioGroupItem value="tr" id="input-tr" />
+                      <Label htmlFor="input-tr" className="cursor-pointer">TR</Label>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <RadioGroupItem value="en" id="input-en" />
+                      <Label htmlFor="input-en" className="cursor-pointer">EN</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
 
-      <ContentDisplay content={content} includeFAQ={includeFAQ} />
+                <div className="flex items-center gap-2">
+                  <Label className="whitespace-nowrap">Çıkış Dili:</Label>
+                  <RadioGroup
+                    value={outputLanguage}
+                    onValueChange={(value: "tr" | "en") => setOutputLanguage(value)}
+                    className="flex gap-3"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <RadioGroupItem value="tr" id="output-tr" />
+                      <Label htmlFor="output-tr" className="cursor-pointer">TR</Label>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <RadioGroupItem value="en" id="output-en" />
+                      <Label htmlFor="output-en" className="cursor-pointer">EN</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="faq-mode" className="cursor-pointer">FAQ</Label>
+                  <Switch
+                    id="faq-mode"
+                    checked={includeFAQ}
+                    onCheckedChange={setIncludeFAQ}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Makale Başlığı</Label>
+                <Input
+                  placeholder={`Başlığı ${inputLanguage === "tr" ? "Türkçe" : "İngilizce"} girin`}
+                  value={inputTitle}
+                  onChange={(e) => setInputTitle(e.target.value)}
+                />
+                <Button 
+                  className="w-full"
+                  onClick={handleGenerate}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      İçerik Oluşturuluyor...
+                    </>
+                  ) : (
+                    'İçerik Oluştur'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {content && <ContentDisplay content={content} includeFAQ={includeFAQ} />}
+        </TabsContent>
+
+        <TabsContent value="ideas" className="mt-6">
+          <ContentIdeas />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

@@ -1,69 +1,57 @@
-import stringSimilarity from 'string-similarity';
-
 export class SimilarityCalculator {
-  calculateFuzzySimilarity(text1: string, text2: string): number {
-    if (!text1 || !text2) return 0;
-    
-    const cleanText1 = this.cleanText(text1);
-    const cleanText2 = this.cleanText(text2);
-    
-    console.log("Comparing texts:", {
-      original1: text1,
-      original2: text2,
-      cleaned1: cleanText1,
-      cleaned2: cleanText2
-    });
-    
-    const ratio = stringSimilarity.compareTwoStrings(cleanText1, cleanText2);
-    console.log("Similarity ratio:", ratio);
-    return ratio;
-  }
-
-  calculateContentSimilarity(
-    concepts1: string[],
-    concepts2: string[],
-    context1: string = "",
-    context2: string = ""
-  ): number {
-    console.log("Calculating content similarity:", {
-      concepts1,
-      concepts2,
-      context1,
-      context2
-    });
-
-    if (!concepts1?.length || !concepts2?.length) {
-      console.log("Missing concepts, returning 0");
-      return 0;
+    calculateCosineSimilarity(text1: string[], text2: string[]): number {
+        const vector1 = this.createVector(text1, this.createVocabulary([...text1, ...text2]));
+        const vector2 = this.createVector(text2, this.createVocabulary([...text1, ...text2]));
+        
+        return this.cosineSimilarity(vector1, vector2);
     }
 
-    // Kavramları birleştir
-    const concepts1Str = concepts1.join(" ").toLowerCase();
-    const concepts2Str = concepts2.join(" ").toLowerCase();
-
-    // Kavram benzerliği hesapla
-    const conceptSimilarity = this.calculateFuzzySimilarity(concepts1Str, concepts2Str);
-    console.log("Concept similarity:", conceptSimilarity);
-
-    // Bağlam benzerliği hesapla
-    let contextSimilarity = 0;
-    if (context1 && context2) {
-      contextSimilarity = this.calculateFuzzySimilarity(context1, context2);
-      console.log("Context similarity:", contextSimilarity);
+    private createVocabulary(texts: string[]): Set<string> {
+        return new Set(texts.map(text => text.toLowerCase()));
     }
 
-    // Toplam benzerlik skoru (0.7 kavram, 0.3 bağlam ağırlığı)
-    const totalSimilarity = (conceptSimilarity * 0.7) + (contextSimilarity * 0.3);
-    console.log("Total similarity score:", totalSimilarity);
-    
-    return totalSimilarity;
-  }
+    private createVector(text: string[], vocabulary: Set<string>): number[] {
+        const vector = Array(vocabulary.size).fill(0);
+        const vocabArray = Array.from(vocabulary);
+        
+        text.forEach(word => {
+            const index = vocabArray.indexOf(word.toLowerCase());
+            if (index !== -1) {
+                vector[index]++;
+            }
+        });
+        
+        return vector;
+    }
 
-  private cleanText(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
+    private cosineSimilarity(vector1: number[], vector2: number[]): number {
+        const dotProduct = vector1.reduce((sum, value, index) => sum + value * vector2[index], 0);
+        const magnitude1 = Math.sqrt(vector1.reduce((sum, value) => sum + value * value, 0));
+        const magnitude2 = Math.sqrt(vector2.reduce((sum, value) => sum + value * value, 0));
+        
+        if (magnitude1 === 0 || magnitude2 === 0) return 0;
+        return dotProduct / (magnitude1 * magnitude2);
+    }
+
+    calculateFuzzySimilarity(text1: string, text2: string): number {
+        const set1 = new Set(text1.toLowerCase().split(/\s+/));
+        const set2 = new Set(text2.toLowerCase().split(/\s+/));
+        
+        const intersection = new Set([...set1].filter(x => set2.has(x)));
+        const union = new Set([...set1, ...set2]);
+        
+        return intersection.size / union.size;
+    }
+
+    calculateContentSimilarity(concepts1: string[], concepts2: string[], context1: string = "", context2: string = ""): number {
+        // Kavram benzerliği (0.7 ağırlık)
+        const conceptSimilarity = this.calculateCosineSimilarity(concepts1, concepts2);
+        
+        // Bağlam benzerliği (0.3 ağırlık)
+        const contextSimilarity = context1 && context2 
+            ? this.calculateFuzzySimilarity(context1, context2)
+            : 0;
+        
+        return (conceptSimilarity * 0.7) + (contextSimilarity * 0.3);
+    }
 }

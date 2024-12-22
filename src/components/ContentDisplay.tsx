@@ -18,18 +18,75 @@ const ContentDisplay = ({ content, includeFAQ }: ContentDisplayProps) => {
 
   if (!content) return null;
 
+  const processContent = (text: string) => {
+    // YouTube iframe'lerini düzelt
+    text = text.replace(
+      /&lt;iframe.*?src="(.*?)".*?&gt;&lt;\/iframe&gt;/g,
+      '<div class="video-wrapper"><iframe src="$1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
+    );
+
+    // HTML karakterlerini düzelt
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    
+    return text;
+  };
+
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      description: "Panoya kopyalandı",
-    });
+    try {
+      // Geçici bir div elementi oluştur
+      const el = document.createElement('div');
+      el.setAttribute('contenteditable', 'true');
+      el.innerHTML = text;
+      el.style.position = 'fixed';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+
+      // Metni seç
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+
+      // Kopyala
+      try {
+        document.execCommand('copy');
+        toast({
+          description: "İçerik kopyalandı",
+        });
+      } catch (err) {
+        console.error('ExecCommand Copy failed:', err);
+        // Alternatif yöntem
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        toast({
+          description: "İçerik kopyalandı",
+        });
+      }
+
+      // Temizlik
+      document.body.removeChild(el);
+    } catch (error) {
+      console.error('Kopyalama hatası:', error);
+      toast({
+        title: "Hata",
+        description: "Manuel olarak seçip kopyalayınız",
+        variant: "destructive"
+      });
+    }
   };
 
   const copyAllFAQs = () => {
     if (!content.faq) return;
     
     const allFAQs = `<h2>Sıkça Sorulan Sorular</h2>\n\n${content.faq.questions.map((item) => (
-      `<h3><strong>${item.question}</strong></h3>\n${item.answer}\n\n`
+      `<h3><strong>${item.question}</strong></h3>\n${processContent(item.answer)}\n\n`
     )).join('')}`;
     
     copyToClipboard(allFAQs.trim());
@@ -133,7 +190,7 @@ const ContentDisplay = ({ content, includeFAQ }: ContentDisplayProps) => {
                               className="ml-2"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                copyToClipboard(`Soru: ${item.question}\nCevap: ${item.answer}`);
+                                copyToClipboard(`<h3><strong>${item.question}</strong></h3>\n${processContent(item.answer)}`);
                               }}
                             >
                               <Copy className="h-4 w-4" />
@@ -141,7 +198,10 @@ const ContentDisplay = ({ content, includeFAQ }: ContentDisplayProps) => {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          {item.answer}
+                          <div 
+                            className="content-wrapper"
+                            dangerouslySetInnerHTML={{ __html: processContent(item.answer) }} 
+                          />
                         </AccordionContent>
                       </AccordionItem>
                     ))}
